@@ -2,6 +2,9 @@
 "use client"; // 👈 Đảm bảo có dòng này trên cùng
 import Cookies from 'js-cookie'
 import React from "react"
+
+import { Ban } from "lucide-react";
+
 import { useRouter } from "next/navigation";
 import type { FunctionComponent } from "react"
 import { useState, useEffect } from "react"
@@ -115,6 +118,7 @@ interface ContractNotification {
   status: "expired" | "expiring" | "active"
   notificationSent: boolean
   lastNotificationDate?: string
+
 }
 
 const mockBuildings: Building[] = [
@@ -124,97 +128,97 @@ const mockBuildings: Building[] = [
   { id: "D", name: "Dãy D", description: "Dãy phòng mới" },
 ]
 
-const mockRooms: Room[] = [
-  {
-    id: "1",
-    number: "A101",
-    building: "A",
-    area: 20,
-    price: 3000000,
-    status: "occupied" as "occupied",
-    amenities: ["wifi", "ac", "parking"],
-    tenant: "Nguyễn Văn A",
-    tenantPhone: "0901234567",
-    tenantEmail: "nguyenvana@email.com",
-    tenantIdCard: "123456789012",
-    tenantBirthDate: "1990-05-15",
-    tenantHometown: {
-      province: "TP. Hồ Chí Minh",
-      district: "Quận 1",
-      ward: "Phường Bến Nghé",
-      village: "",
-    },
-    tenantMembers: [
-      {
-        name: "Nguyễn Thị C",
-        relationship: "Vợ/Chồng",
-        birthDate: "1992-08-20",
-        idCard: "123456789013",
-      },
-    ],
-    description: "Phòng đầy đủ tiện nghi",
-    contractStartDate: "2024-01-15",
-    contractEndDate: "2025-01-14",
-  },
-  {
-    id: "2",
-    number: "A102",
-    building: "A",
-    area: 18,
-    price: 2800000,
-    status: "available" as "available",
-    amenities: ["wifi", "ac"],
-    description: "Phòng thoáng mát",
-  },
-  {
-    id: "3",
-    number: "B201",
-    building: "B",
-    area: 22,
-    price: 3200000,
-    status: "occupied" as "occupied",
-    amenities: ["wifi", "ac", "tv"],
-    tenant: "Trần Thị B",
-    tenantPhone: "0907654321",
-    tenantEmail: "tranthib@email.com",
-    tenantIdCard: "987654321098",
-    tenantBirthDate: "1988-12-10",
-    tenantHometown: {
-      province: "Hà Nội",
-      district: "Quận Ba Đình",
-      ward: "Phường Điện Biên",
-      village: "",
-    },
-    tenantMembers: [
-      {
-        name: "Trần Văn D",
-        relationship: "Con",
-        birthDate: "2015-03-25",
-        idCard: "",
-      },
-    ],
-    contractStartDate: "2024-06-01",
-    contractEndDate: "2025-05-31",
-  },
-  {
-    id: "4",
-    number: "C202",
-    building: "C",
-    area: 25,
-    price: 3500000,
-    status: "available" as "available",
-    amenities: ["wifi", "ac", "tv"],
-  },
-  {
-    id: "5",
-    number: "D301",
-    building: "D",
-    area: 20,
-    price: 3100000,
-    status: "available" as "available",
-    amenities: ["wifi", "ac"],
-  },
-]
+// const mockRooms: Room[] = [
+//   {
+//     id: "1",
+//     number: "A101",
+//     building: "A",
+//     area: 20,
+//     price: 3000000,
+//     status: "occupied" as "occupied",
+//     amenities: ["wifi", "ac", "parking"],
+//     tenant: "Nguyễn Văn A",
+//     tenantPhone: "0901234567",
+//     tenantEmail: "nguyenvana@email.com",
+//     tenantIdCard: "123456789012",
+//     tenantBirthDate: "1990-05-15",
+//     tenantHometown: {
+//       province: "TP. Hồ Chí Minh",
+//       district: "Quận 1",
+//       ward: "Phường Bến Nghé",
+//       village: "",
+//     },
+//     tenantMembers: [
+//       {
+//         name: "Nguyễn Thị C",
+//         relationship: "Vợ/Chồng",
+//         birthDate: "1992-08-20",
+//         idCard: "123456789013",
+//       },
+//     ],
+//     description: "Phòng đầy đủ tiện nghi",
+//     contractStartDate: "2024-01-15",
+//     contractEndDate: "2025-01-14",
+//   },
+//   {
+//     id: "2",
+//     number: "A102",
+//     building: "A",
+//     area: 18,
+//     price: 2800000,
+//     status: "available" as "available",
+//     amenities: ["wifi", "ac"],
+//     description: "Phòng thoáng mát",
+//   },
+//   {
+//     id: "3",
+//     number: "B201",
+//     building: "B",
+//     area: 22,
+//     price: 3200000,
+//     status: "occupied" as "occupied",
+//     amenities: ["wifi", "ac", "tv"],
+//     tenant: "Trần Thị B",
+//     tenantPhone: "0907654321",
+//     tenantEmail: "tranthib@email.com",
+//     tenantIdCard: "987654321098",
+//     tenantBirthDate: "1988-12-10",
+//     tenantHometown: {
+//       province: "Hà Nội",
+//       district: "Quận Ba Đình",
+//       ward: "Phường Điện Biên",
+//       village: "",
+//     },
+//     tenantMembers: [
+//       {
+//         name: "Trần Văn D",
+//         relationship: "Con",
+//         birthDate: "2015-03-25",
+//         idCard: "",
+//       },
+//     ],
+//     contractStartDate: "2024-06-01",
+//     contractEndDate: "2025-05-31",
+//   },
+//   {
+//     id: "4",
+//     number: "C202",
+//     building: "C",
+//     area: 25,
+//     price: 3500000,
+//     status: "available" as "available",
+//     amenities: ["wifi", "ac", "tv"],
+//   },
+//   {
+//     id: "5",
+//     number: "D301",
+//     building: "D",
+//     area: 20,
+//     price: 3100000,
+//     status: "available" as "available",
+//     amenities: ["wifi", "ac"],
+//   },
+// ]
 
 const availableAmenities = [
   { id: "Wifi", name: "WiFi", icon: Wifi },
@@ -247,6 +251,9 @@ const statusLabels = {
   booked: "Đã đặt cọc",
 }
 
+
+
+
 // Helper function to calculate days until contract expiry
 const getDaysUntilExpiry = (endDate: string): number => {
   const today = new Date()
@@ -262,6 +269,20 @@ const getContractStatus = (endDate: string): "expired" | "expiring" | "active" =
   if (daysUntilExpiry < 0) return "expired"
   if (daysUntilExpiry <= 30) return "expiring"
   return "active"
+}
+
+function mapRoomStatus(apiStatus: string): "available" | "occupied" | "booked" {
+  switch (apiStatus) {
+    case "ConTrong":
+      return "available";
+    case "DaThue":
+      return "occupied";
+    case "DaCoc":
+    case "DaDat":
+      return "booked";
+    default:
+      return "available"; // hoặc ném lỗi nếu muốn chặt chẽ hơn
+  }
 }
 
 const vietnamProvinces = [
@@ -351,7 +372,7 @@ const RoomsPage: FunctionComponent = () => {
   const [isAddContractOpen, setIsAddContractOpen] = useState(false)
   const [contractRoom, setContractRoom] = useState<Room | null>(null)
   const [extensionMonths, setExtensionMonths] = useState<number>(12)
-  
+
   // const [landlordInfo, setLandlordInfo] = useState({
   //   name: "Công ty TNHH Quản lý Nhà trọ ABC",
   //   address: "123 Đường ABC, Phường XYZ, Quận 1, TP.HCM",
@@ -450,18 +471,33 @@ const RoomsPage: FunctionComponent = () => {
   useEffect(() => {
     if (contractRoom) setDeposit(contractRoom.price || 0);
   }, [contractRoom]);
-
+  function mapRoomStatus(apiStatus: string): "available" | "occupied" | "booked" {
+    switch (apiStatus) {
+      case "ConTrong":
+        return "available";
+      case "DaThue":
+        return "occupied";
+      case "DaCoc":
+      case "DaDat":
+        return "booked";
+      default:
+        return "available"; // fallback
+    }
+  }
   useEffect(() => {
     const token = Cookies.get("token");
     console.log("Token từ cookie:", token);
-  
+
     if (!token || token === "null" || token === "undefined") {
       console.warn("Không có token → chuyển về /login");
       router.replace("/login");
       return;
     }
-  
-    // Lấy danh sách phòng có kèm token
+    // xóa phòng
+
+
+
+    // Lấy danh sách phòng
     axios
       .get("https://all-oqry.onrender.com/api/phong", {
         headers: {
@@ -470,17 +506,17 @@ const RoomsPage: FunctionComponent = () => {
       })
       .then((res) => {
         const mappedRooms = res.data.map((phong: any) => ({
-          id: phong.PhongID,
+          id: String(phong.PhongID),
           number: phong.SoPhong,
           building: phong.DayPhong,
           area: Number(phong.DienTich?.replace(/[^\d.]/g, "") || 0),
           price: Number(phong.GiaPhong),
-          status: "available" as "available",
+          status: mapRoomStatus(phong.TrangThaiPhong),
           amenities: phong.TienIch || [],
           description: phong.MoTaPhong,
         }));
-  
-        // Lấy danh sách hợp đồng (cũng kèm token)
+
+        // Lấy hợp đồng
         axios
           .get("https://all-oqry.onrender.com/api/hopdong", {
             headers: {
@@ -489,7 +525,7 @@ const RoomsPage: FunctionComponent = () => {
           })
           .then((contractRes) => {
             const contracts = contractRes.data;
-  
+
             let mergedRooms = mappedRooms.map((room: Room) => {
               const contract = contracts.find(
                 (c: any) =>
@@ -508,8 +544,8 @@ const RoomsPage: FunctionComponent = () => {
               }
               return room;
             });
-  
-            // Lấy danh sách phòng đã đặt cọc (cũng kèm token)
+
+            // Lấy danh sách phòng đã đặt cọc
             axios
               .get("https://all-oqry.onrender.com/api/phong/phongdaco", {
                 headers: {
@@ -522,7 +558,7 @@ const RoomsPage: FunctionComponent = () => {
                 );
                 mergedRooms = mergedRooms.map((room: Room) =>
                   booked.includes(String(room.id)) && room.status !== "occupied"
-                    ? { ...room, status: "booked" as "booked" }
+                    ? { ...room, status: "booked" }
                     : room
                 );
                 setRooms(mergedRooms);
@@ -537,115 +573,115 @@ const RoomsPage: FunctionComponent = () => {
       })
       .catch(() => setRooms([]));
   }, []);
-  
-
-//   axios.get('https://all-oqry.onrender.com/api/phong')
-//   .then(res => {
-//     const mappedRooms = res.data.map((phong: any) => ({
-//       id: phong.PhongID, // Sử dụng đúng PhongID làm id
-//       number: phong.SoPhong,
-//       building: phong.DayPhong,
-//       area: Number(phong.DienTich?.replace(/[^\d.]/g, '') || 0),
-//       price: Number(phong.GiaPhong),
-//       status: 'available' as 'available',
-//       amenities: phong.TienIch || [],
-//       description: phong.MoTaPhong,
-//     }));
-//     // Sau khi lấy phòng, lấy hợp đồng
-//     axios.get('https://all-oqry.onrender.com/api/hopdong')
-//       .then(contractRes => {
-//         const contracts = contractRes.data; // Giả sử trả về mảng hợp đồng
-//         let mergedRooms = mappedRooms.map((room: Room) => {
-//           const contract = contracts.find((c: any) => String(c.PhongID_id) === String(room.id) && c.TrangThaiHopDong === 'HoatDong');
-//           if (contract) {
-//             return {
-//               ...room,
-//               status: 'occupied',
-//               tenant: contract.HoTenKhachHang || contract.TenKhachHang || '',
-//               tenantPhone: contract.SoDienThoai || '',
-//               contractStartDate: contract.NgayBatDau,
-//               contractEndDate: contract.NgayKetThuc,
-//             };
-//           }
-//           return room;
-//         });
-//         // Tiếp tục lấy danh sách phòng đã đặt cọc
-//         axios.get('https://all-oqry.onrender.com/api/phong/phongdaco')
-//           .then(bookedRes => {
-//             const booked = bookedRes.data.data.map((phong: any) => String(phong.PhongID));
-//             mergedRooms = mergedRooms.map((room: Room) =>
-//               booked.includes(String(room.id)) && room.status !== 'occupied'
-//                 ? { ...room, status: 'booked' as 'booked' }
-//                 : room
-//             );
-//             setRooms(mergedRooms);
-//           })
-//           .catch(() => {
-//             setRooms(mergedRooms);
-//           });
-//       })
-//       .catch(() => {
-//         setRooms(mappedRooms);
-//       });
-//   })
-//   .catch(() => setRooms([]));
-// }, []);
 
 
+  //   axios.get('https://all-oqry.onrender.com/api/phong')
+  //   .then(res => {
+  //     const mappedRooms = res.data.map((phong: any) => ({
+  //       id: phong.PhongID, // Sử dụng đúng PhongID làm id
+  //       number: phong.SoPhong,
+  //       building: phong.DayPhong,
+  //       area: Number(phong.DienTich?.replace(/[^\d.]/g, '') || 0),
+  //       price: Number(phong.GiaPhong),
+  //       status: 'available' as 'available',
+  //       amenities: phong.TienIch || [],
+  //       description: phong.MoTaPhong,
+  //     }));
+  //     // Sau khi lấy phòng, lấy hợp đồng
+  //     axios.get('https://all-oqry.onrender.com/api/hopdong')
+  //       .then(contractRes => {
+  //         const contracts = contractRes.data; // Giả sử trả về mảng hợp đồng
+  //         let mergedRooms = mappedRooms.map((room: Room) => {
+  //           const contract = contracts.find((c: any) => String(c.PhongID_id) === String(room.id) && c.TrangThaiHopDong === 'HoatDong');
+  //           if (contract) {
+  //             return {
+  //               ...room,
+  //               status: 'occupied',
+  //               tenant: contract.HoTenKhachHang || contract.TenKhachHang || '',
+  //               tenantPhone: contract.SoDienThoai || '',
+  //               contractStartDate: contract.NgayBatDau,
+  //               contractEndDate: contract.NgayKetThuc,
+  //             };
+  //           }
+  //           return room;
+  //         });
+  //         // Tiếp tục lấy danh sách phòng đã đặt cọc
+  //         axios.get('https://all-oqry.onrender.com/api/phong/phongdaco')
+  //           .then(bookedRes => {
+  //             const booked = bookedRes.data.data.map((phong: any) => String(phong.PhongID));
+  //             mergedRooms = mergedRooms.map((room: Room) =>
+  //               booked.includes(String(room.id)) && room.status !== 'occupied'
+  //                 ? { ...room, status: 'booked' as 'booked' }
+  //                 : room
+  //             );
+  //             setRooms(mergedRooms);
+  //           })
+  //           .catch(() => {
+  //             setRooms(mergedRooms);
+  //           });
+  //       })
+  //       .catch(() => {
+  //         setRooms(mappedRooms);
+  //       });
+  //   })
+  //   .catch(() => setRooms([]));
+  // }, []);
 
 
-// Phòng đã có
-  
-//   useEffect(() => {
-//     const token = Cookies.get("token"); // ✅ lấy từ cookie
-// console.log("Token từ cookie:", token);
 
-// if (!token || token === "null" || token === "undefined") {
-//   console.warn("Không có token → chuyển về /login");
-//   router.replace("/login");
-// }
-//     axios.get('https://all-oqry.onrender.com/api/phong/phongdaco')
-//       .then(res => {
-//         const booked = res.data.data.map((phong: any) => ({
-//           id: phong.PhongID,
-//           number: phong.SoPhong,
-//           building: phong.DayPhong,
-//           area: Number(phong.DienTich?.replace(/[^\d.]/g, '') || 0),
-//           price: Number(phong.GiaPhong),
-//           status: 'booked' as 'booked',
-//           amenities: phong.TienIch || [],
-//           description: phong.MoTaPhong,
-//         }));
-//         setRooms(prevRooms => {
-//           // Cập nhật trạng thái phòng đã đặt cọc
-//           const updatedRooms = prevRooms.map(room => {
-//             const found = booked.find((b: Room) => String(b.id) === String(room.id));
-//             return found ? { ...room, status: 'booked' as 'booked' } : room;
-//           });
-//           // Thêm phòng booked chưa có trong rooms
-//           booked.forEach((b: Room) => {
-//             if (!updatedRooms.some(r => String(r.id) === String(b.id))) {
-//               updatedRooms.push(b);
-//             }
-//           });
-//           return updatedRooms;
-//         });
-//       })
-//       .catch(() => {
-//         // Xử lý lỗi nếu cần
-//       });
-//   }, []);
+
+  // Phòng đã có
+
+  //   useEffect(() => {
+  //     const token = Cookies.get("token"); // ✅ lấy từ cookie
+  // console.log("Token từ cookie:", token);
+
+  // if (!token || token === "null" || token === "undefined") {
+  //   console.warn("Không có token → chuyển về /login");
+  //   router.replace("/login");
+  // }
+  //     axios.get('https://all-oqry.onrender.com/api/phong/phongdaco')
+  //       .then(res => {
+  //         const booked = res.data.data.map((phong: any) => ({
+  //           id: phong.PhongID,
+  //           number: phong.SoPhong,
+  //           building: phong.DayPhong,
+  //           area: Number(phong.DienTich?.replace(/[^\d.]/g, '') || 0),
+  //           price: Number(phong.GiaPhong),
+  //           status: 'booked' as 'booked',
+  //           amenities: phong.TienIch || [],
+  //           description: phong.MoTaPhong,
+  //         }));
+  //         setRooms(prevRooms => {
+  //           // Cập nhật trạng thái phòng đã đặt cọc
+  //           const updatedRooms = prevRooms.map(room => {
+  //             const found = booked.find((b: Room) => String(b.id) === String(room.id));
+  //             return found ? { ...room, status: 'booked' as 'booked' } : room;
+  //           });
+  //           // Thêm phòng booked chưa có trong rooms
+  //           booked.forEach((b: Room) => {
+  //             if (!updatedRooms.some(r => String(r.id) === String(b.id))) {
+  //               updatedRooms.push(b);
+  //             }
+  //           });
+  //           return updatedRooms;
+  //         });
+  //       })
+  //       .catch(() => {
+  //         // Xử lý lỗi nếu cần
+  //       });
+  //   }, []);
 
   useEffect(() => {
     const token = Cookies.get("token"); // ✅ lấy từ cookie
     console.log("Token từ cookie:", token);
-  
+
     if (!token || token === "null" || token === "undefined") {
       console.warn("Không có token → chuyển về /login");
       router.replace("/login");
       return;
     }
-  
+
     // ✅ Gọi API với token
     axios.get('https://all-oqry.onrender.com/api/phong/phongdaco', {
       headers: {
@@ -663,7 +699,7 @@ const RoomsPage: FunctionComponent = () => {
           amenities: phong.TienIch || [],
           description: phong.MoTaPhong,
         }));
-  
+
         setRooms(prevRooms => {
           // Cập nhật trạng thái phòng đã đặt cọc
           const updatedRooms = prevRooms.map(room => {
@@ -676,7 +712,7 @@ const RoomsPage: FunctionComponent = () => {
               updatedRooms.push(b);
             }
           });
-  
+
           return updatedRooms;
         });
       })
@@ -685,11 +721,11 @@ const RoomsPage: FunctionComponent = () => {
         // Nếu cần, có thể thông báo lỗi hoặc logout người dùng
       });
   }, []);
-  
-  
+
+
 
   // 2. Hàm mở modal đặt cọc
-  
+
   const handleOpenBooking = (roomId: number | string) => {
     const idNum = typeof roomId === 'string' ? Number(roomId) : roomId;
     setBookingRoomId(idNum);
@@ -706,38 +742,45 @@ const RoomsPage: FunctionComponent = () => {
   // 4. Hàm submit đặt cọc
   const handleBookingSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-  
-    console.log("🧾 Đang submit form đặt cọc...");
-  
-    if (typeof bookingRoomId !== 'number' || isNaN(bookingRoomId)) {
-      console.warn("❌ bookingRoomId không hợp lệ:", bookingRoomId);
+
+    if (typeof bookingRoomId !== "number" || isNaN(bookingRoomId)) {
+      addNotification("Phòng không hợp lệ", "error");
       return;
     }
-  
+
+    const { HoTenKhach, SoDienThoai, SoTienDatCoc, NgayDatCoc } = bookingForm;
+    if (!HoTenKhach || !SoDienThoai || !SoTienDatCoc || !NgayDatCoc) {
+      addNotification("Vui lòng điền đầy đủ thông tin", "error");
+      return;
+    }
+
+    // ✅ Format ngày đúng chuẩn MySQL
+    const formattedDate = new Date(NgayDatCoc)
+      .toISOString()
+      .slice(0, 19)
+      .replace("T", " ");
+
     const bookingData = {
-      HoTenKhach: bookingForm.HoTenKhach,
-      SoDienThoai: bookingForm.SoDienThoai,
+      HoTenKhach: HoTenKhach.trim(),
+      SoDienThoai: SoDienThoai.trim(),
       PhongID: bookingRoomId,
-      SoTienDatCoc: Number(bookingForm.SoTienDatCoc),
-      NgayDatCoc: bookingForm.NgayDatCoc,
+      SoTienDatCoc: Number(SoTienDatCoc),
+      NgayDatCoc: formattedDate,
     };
-  
+
+    // ✅ Lấy token từ cookie
     const token = Cookies.get("token");
-    if (!token || token === "undefined" || token === "null") {
-      console.warn("⚠️ Token không hợp lệ → chuyển /login");
-      router.replace("/login");
-      return;
-    }
-  
+    console.log("Token từ cookie:", token);
+
     if (!token || token === "null" || token === "undefined") {
-      console.warn("⚠️ Không có token hợp lệ → chuyển về /login");
+      console.warn("Không có token → chuyển về /login");
       router.replace("/login");
       return;
     }
-  
+
     try {
       const response = await axios.post(
-        'https://all-oqry.onrender.com/api/phong/dat-phong',
+        "https://all-oqry.onrender.com/api/phong/dat-phong",
         bookingData,
         {
           headers: {
@@ -745,30 +788,30 @@ const RoomsPage: FunctionComponent = () => {
           },
         }
       );
-  
-      console.log("📦 Phản hồi từ server:", response.data);
-  
+
+      console.log("✅ Phản hồi API:", response.data);
+
       setBookings([...bookings, bookingData]);
-  
-      setRooms(prevRooms =>
-        prevRooms.map(room =>
-          Number(room.id) === Number(bookingRoomId)
+
+      setRooms((prevRooms) =>
+        prevRooms.map((room) =>
+          Number(room.id) === bookingRoomId
             ? { ...room, status: "booked" }
             : room
         )
       );
-  
+
       setIsBookingOpen(false);
       setBookingRoomId(null);
-      addNotification('Đặt cọc thành công!', 'success');
-    } catch (error) {
-      console.error("❌ Lỗi khi đặt cọc:", error);
-      addNotification('Đặt cọc thất bại!', 'error');
+      addNotification("Đặt cọc thành công!", "success");
+    } catch (error: any) {
+      console.error("❌ Lỗi khi gọi API đặt cọc:", error?.response?.data || error);
+      addNotification("Đặt cọc thất bại!", "error");
     }
   };
-  
+
   // const handleBookingSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    
+
   //   e.preventDefault();
   //   if (typeof bookingRoomId !== 'number' || isNaN(bookingRoomId)) return;
 
@@ -800,8 +843,8 @@ const RoomsPage: FunctionComponent = () => {
   // };
 
 
-  
-  
+
+
   const handleImageUpload = (
     event: React.ChangeEvent<HTMLInputElement>,
     side: "front" | "back"
@@ -815,7 +858,7 @@ const RoomsPage: FunctionComponent = () => {
       }));
     }
   };
-  
+
 
   const removeImage = (type: "front" | "back") => {
     setCccdImages((prev) => ({
@@ -825,69 +868,69 @@ const RoomsPage: FunctionComponent = () => {
   }
 
 
-// thêm phòng
-// Token
-const token = Cookies.get("token"); // ✅ lấy từ cookie
-console.log("Token từ cookie:", token);
+  // thêm phòng
+  // Token
+  const token = Cookies.get("token"); // ✅ lấy từ cookie
+  console.log("Token từ cookie:", token);
 
-if (!token || token === "null" || token === "undefined") {
-  console.warn("Không có token → chuyển về /login");
-  router.replace("/login");
-  return;
-}
-
-const handleAddRoom = async (event: React.FormEvent<HTMLFormElement>) => {
-  event.preventDefault();
-  const formData = new FormData(event.currentTarget);
-  const newRoom = {
-    SoPhong: String(formData.get("number") || ""),
-    DayPhong: String(formData.get("building") || ""),
-    GiaPhong: Number(formData.get("price") || 0),
-    MoTaPhong: String(formData.get("description") || ""),
-    DienTich: String(formData.get("area") || ""),
-    TienIch: selectedAmenities,
-  };
-
-  try {
-    // ✅ Gửi token trong header
-    await axios.post(
-      "https://all-oqry.onrender.com/api/phong/them",
-      newRoom,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`, // Token kèm theo
-        },
-      }
-    );
-
-    const res = await axios.get("https://all-oqry.onrender.com/api/phong", {
-      headers: {
-        Authorization: `Bearer ${token}`, // Gọi GET cũng cần token nếu API yêu cầu
-      },
-    });
-
-    const mappedRooms = res.data.map((phong: any) => ({
-      id: phong._id || phong.id || Date.now().toString(),
-      number: phong.SoPhong,
-      building: phong.DayPhong,
-      area: Number(phong.DienTich?.replace(/[^\d.]/g, "") || 0),
-      price: phong.GiaPhong,
-      status: "available" as "available",
-      amenities: phong.TienIch || [],
-      description: phong.MoTaPhong,
-    }));
-
-    setRooms(mappedRooms);
-    const lastRoom = mappedRooms[mappedRooms.length - 1];
-    setLastAddedRoom({ building: lastRoom.building, number: lastRoom.number });
-    setIsAddDialogOpen(false);
-    setSelectedAmenities([]);
-    addNotification(`Đã thêm phòng ${lastRoom.building}-${lastRoom.number} thành công!`, "success");
-  } catch (error: any) {
-    console.error("Lỗi thêm phòng:", error);
-    addNotification("Lỗi khi thêm phòng!", "error");
+  if (!token || token === "null" || token === "undefined") {
+    console.warn("Không có token → chuyển về /login");
+    router.replace("/login");
+    return;
   }
-};
+
+  const handleAddRoom = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const newRoom = {
+      SoPhong: String(formData.get("number") || ""),
+      DayPhong: String(formData.get("building") || ""),
+      GiaPhong: Number(formData.get("price") || 0),
+      MoTaPhong: String(formData.get("description") || ""),
+      DienTich: String(formData.get("area") || ""),
+      TienIch: selectedAmenities,
+    };
+
+    try {
+      // ✅ Gửi token trong header
+      await axios.post(
+        "https://all-oqry.onrender.com/api/phong/them",
+        newRoom,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Token kèm theo
+          },
+        }
+      );
+
+      const res = await axios.get("https://all-oqry.onrender.com/api/phong", {
+        headers: {
+          Authorization: `Bearer ${token}`, // Gọi GET cũng cần token nếu API yêu cầu
+        },
+      });
+
+      const mappedRooms = res.data.map((phong: any) => ({
+        id: phong._id || phong.id || Date.now().toString(),
+        number: phong.SoPhong,
+        building: phong.DayPhong,
+        area: Number(phong.DienTich?.replace(/[^\d.]/g, "") || 0),
+        price: phong.GiaPhong,
+        status: "available" as "available",
+        amenities: phong.TienIch || [],
+        description: phong.MoTaPhong,
+      }));
+
+      setRooms(mappedRooms);
+      const lastRoom = mappedRooms[mappedRooms.length - 1];
+      setLastAddedRoom({ building: lastRoom.building, number: lastRoom.number });
+      setIsAddDialogOpen(false);
+      setSelectedAmenities([]);
+      addNotification(`Đã thêm phòng ${lastRoom.building}-${lastRoom.number} thành công!`, "success");
+    } catch (error: any) {
+      console.error("Lỗi thêm phòng:", error);
+      addNotification("Lỗi khi thêm phòng!", "error");
+    }
+  };
 
   // const handleAddRoom = async (event: React.FormEvent<HTMLFormElement>) => {
   //   event.preventDefault();
@@ -914,7 +957,7 @@ const handleAddRoom = async (event: React.FormEvent<HTMLFormElement>) => {
   //       amenities: phong.TienIch || [],
   //       description: phong.MoTaPhong,
   //     }));
-      
+
   //     setRooms(mappedRooms);
   //     // Lấy phòng mới nhất vừa thêm (giả sử là cuối danh sách)
   //     const lastRoom = mappedRooms[mappedRooms.length - 1];
@@ -928,7 +971,7 @@ const handleAddRoom = async (event: React.FormEvent<HTMLFormElement>) => {
   // };
 
 
-// Chỉnh sửa phong
+  // Chỉnh sửa phong
   // const handleEditRoom = (event: React.FormEvent<HTMLFormElement>) => {
   //   event.preventDefault()
   //   if (!editingRoom) return
@@ -950,55 +993,55 @@ const handleAddRoom = async (event: React.FormEvent<HTMLFormElement>) => {
   //   setEditingRoom(null)
   //   setEditSelectedAmenities([])
   // }
-// Chỉnh sửa
-const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
+  // Chỉnh sửa
+  const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-  const form = e.currentTarget;
-  const formData = new FormData(form);
+    const form = e.currentTarget;
+    const formData = new FormData(form);
 
-  const token = Cookies.get("token"); // ✅ Lấy từ cookie
-  console.log("Token từ cookie:", token);
+    const token = Cookies.get("token"); // ✅ Lấy từ cookie
+    console.log("Token từ cookie:", token);
 
-  if (!token || token === "null" || token === "undefined") {
-    console.warn("Không có token → chuyển về /login");
-    router.replace("/login");
-    return; // ❗️ Dừng thực thi nếu không có token
-  }
+    if (!token || token === "null" || token === "undefined") {
+      console.warn("Không có token → chuyển về /login");
+      router.replace("/login");
+      return; // ❗️ Dừng thực thi nếu không có token
+    }
 
-  if (!editingRoom?.id) {
-    addNotification("Không tìm thấy phòng để sửa!", "error");
-    return;
-  }
+    if (!editingRoom?.id) {
+      addNotification("Không tìm thấy phòng để sửa!", "error");
+      return;
+    }
 
-  const data = {
-    PhongID: editingRoom.id,
-    DayPhong: formData.get("building") as string,
-    SoPhong: formData.get("number") as string,
-    GiaPhong: Number(formData.get("price")),
-    MoTaPhong: formData.get("description") as string,
-    DienTich: Number(formData.get("area")),
-    TienIch: editSelectedAmenities,
-  };
+    const data = {
+      PhongID: editingRoom.id,
+      DayPhong: formData.get("building") as string,
+      SoPhong: formData.get("number") as string,
+      GiaPhong: Number(formData.get("price")),
+      MoTaPhong: formData.get("description") as string,
+      DienTich: Number(formData.get("area")),
+      TienIch: editSelectedAmenities,
+    };
 
-  try {
-    console.log("Payload gửi đi:", data);
+    try {
+      console.log("Payload gửi đi:", data);
 
-    const response = await axios.put(
-      `https://all-oqry.onrender.com/api/phong/sua/${editingRoom.id}`,
-      data,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`, // ✅ Gửi token trong header
-        },
-      }
-    );
+      const response = await axios.put(
+        `https://all-oqry.onrender.com/api/phong/sua/${editingRoom.id}`,
+        data,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // ✅ Gửi token trong header
+          },
+        }
+      );
 
-    console.log("Phòng đã được cập nhật:", response.data);
+      console.log("Phòng đã được cập nhật:", response.data);
 
-    const updatedRooms = rooms.map((room) =>
-      room.id === editingRoom.id
-        ? {
+      const updatedRooms = rooms.map((room) =>
+        room.id === editingRoom.id
+          ? {
             ...editingRoom,
             number: data.SoPhong,
             building: data.DayPhong,
@@ -1007,20 +1050,20 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
             area: data.DienTich,
             amenities: data.TienIch,
           }
-        : room
-    );
+          : room
+      );
 
-    setRooms(updatedRooms);
-    setIsEditRoomOpen(false);
-    setEditingRoom(null);
-    setEditSelectedAmenities([]);
-    addNotification("Cập nhật phòng thành công!", "success");
-  } catch (error: any) {
-    console.error("Lỗi khi cập nhật phòng:", error);
-    console.error("Chi tiết lỗi:", error.response?.data);
-    addNotification("Lỗi khi cập nhật phòng!", "error");
-  }
-};
+      setRooms(updatedRooms);
+      setIsEditRoomOpen(false);
+      setEditingRoom(null);
+      setEditSelectedAmenities([]);
+      addNotification("Cập nhật phòng thành công!", "success");
+    } catch (error: any) {
+      console.error("Lỗi khi cập nhật phòng:", error);
+      console.error("Chi tiết lỗi:", error.response?.data);
+      addNotification("Lỗi khi cập nhật phòng!", "error");
+    }
+  };
 
 
 
@@ -1274,9 +1317,9 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
   // const handleAddContract = async (event: React.FormEvent<HTMLFormElement>) => {
   //   event.preventDefault();
   //   if (!contractRoom) return;
-  
+
   //   const formData = new FormData(event.currentTarget);
-  
+
   //   // Tạo payload thêm khách hàng
   //   const customerPayload = new FormData();
   //   customerPayload.append('HoTenKhachHang', formData.get('tenantName') || '');
@@ -1291,14 +1334,14 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
   //   customerPayload.append('SoCCCD', formData.get('tenantIdCard') || '');
   //   customerPayload.append('NgayCapCCCD', formData.get('NgayCapCCCD') || '');
   //   customerPayload.append('NoiCapCCCD', formData.get('NoiCapCCCD') || '');
-  
+
   //   if (cccdImages.front?.file) {
   //     customerPayload.append('CCCDMT', cccdImages.front.file);
   //   }
   //   if (cccdImages.back?.file) {
   //     customerPayload.append('CCCDMS', cccdImages.back.file);
   //   }
-  
+
   //   try {
   //     // Bước 1: Thêm khách hàng
   //     const customerRes = await axios.post(
@@ -1308,15 +1351,15 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
   //         headers: { 'Content-Type': 'multipart/form-data' },
   //       }
   //     );
-  
+
   //     const KhachHangID_id = customerRes.data.khachHangID;
-  
+
   //     if (!KhachHangID_id) {
   //       throw new Error('Không lấy được ID khách hàng sau khi thêm.');
   //     }
-  
+
   //     addNotification('Thêm khách hàng thành công!', 'success');
-  
+
   //     // Bước 2: Tạo hợp đồng
   //     const PhongID_id = contractRoom.id;
   //     const DayPhong = contractRoom.building;
@@ -1329,7 +1372,7 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
   //     const SoLuongThanhVien = Number(formData.get('soLuongThanhVien')) || 1;
   //     const GhiChuHopDong = 'H';
   //     const ThoiHanHopDong = contractDuration + ' tháng';
-  
+
   //     const contractPayload = {
   //       PhongID_id,
   //       KhachHangID_id,
@@ -1344,12 +1387,12 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
   //       GhiChuHopDong,
   //       ThoiHanHopDong,
   //     };
-  
+
   //     await axios.post(
   //       'https://all-oqry.onrender.com/api/hopdong/them',
   //       contractPayload
   //     );
-  
+
   //     setRooms(
   //       rooms.map((room) =>
   //         room.id === contractRoom.id
@@ -1369,18 +1412,18 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
   const handleAddContract = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!contractRoom) return;
-  
+
     const token = Cookies.get("token");
     console.log("Token từ cookie:", token);
-  
+
     if (!token || token === "null" || token === "undefined") {
       console.warn("Không có token → chuyển về /login");
       router.replace("/login");
       return; // Dừng hàm nếu không có token
     }
-  
+
     const formData = new FormData(event.currentTarget);
-  
+
     // Tạo payload thêm khách hàng
     const customerPayload = new FormData();
     customerPayload.append('HoTenKhachHang', formData.get('tenantName') || '');
@@ -1395,14 +1438,14 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
     customerPayload.append('SoCCCD', formData.get('tenantIdCard') || '');
     customerPayload.append('NgayCapCCCD', formData.get('NgayCapCCCD') || '');
     customerPayload.append('NoiCapCCCD', formData.get('NoiCapCCCD') || '');
-  
+
     if (cccdImages.front?.file) {
       customerPayload.append('CCCDMT', cccdImages.front.file);
     }
     if (cccdImages.back?.file) {
       customerPayload.append('CCCDMS', cccdImages.back.file);
     }
-  
+
     try {
       // Bước 1: Thêm khách hàng
       const customerRes = await axios.post(
@@ -1415,15 +1458,66 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
           },
         }
       );
-  
+
       const KhachHangID_id = customerRes.data.khachHangID;
-  
+
       if (!KhachHangID_id) {
         throw new Error('Không lấy được ID khách hàng sau khi thêm.');
       }
-  
+
       addNotification('Thêm khách hàng thành công!', 'success');
-  
+
+
+      // Hàm thêm khách hàng mới
+
+      // const handleAddCustomer = async (formData: FormData) => {
+      //   const token = Cookies.get("token");
+
+      //   if (!token || token === "null" || token === "undefined") {
+      //     console.warn("Không có token → chuyển về /login");
+      //     router.replace("/login");
+      //     return;
+      //   }
+
+      //   const payload = new FormData();
+
+      //   payload.append('HoTenKhachHang', formData.get('tenantName') || '');
+      //   payload.append('SoDienThoai', formData.get('tenantPhone') || '');
+      //   payload.append('NgaySinh', formData.get('tenantBirthDate') || '');
+      //   payload.append('GioiTinh', formData.get('tenantGender') || '');
+      //   payload.append('CongViec', formData.get('CongViec') || '');
+      //   payload.append('TinhThanh', formData.get('province') || '');
+      //   payload.append('QuanHuyen', formData.get('district') || '');
+      //   payload.append('PhuongXa', formData.get('ward') || '');
+      //   payload.append('DiaChiCuThe', formData.get('village') || '');
+      //   payload.append('SoCCCD', formData.get('tenantIdCard') || '');
+      //   payload.append('NgayCapCCCD', formData.get('NgayCapCCCD') || '');
+      //   payload.append('NoiCapCCCD', formData.get('NoiCapCCCD') || '');
+
+      //   if (cccdImages.front) {
+      //     payload.append('CCCDMT', cccdImages.front);
+      //   }
+
+      //   if (cccdImages.back) {
+      //     payload.append('CCCDMS', cccdImages.back);
+      //   }
+
+      //   try {
+      //     const res = await axios.post('https://all-oqry.onrender.com/api/khachhang/them', payload, {
+      //       headers: {
+      //         'Content-Type': 'multipart/form-data',
+      //         Authorization: `Bearer ${token}`, // 👈 THÊM TOKEN Ở ĐÂY
+      //       },
+      //     });
+
+      //     console.log("✅ Đã thêm khách hàng:", res.data);
+      //     addNotification('Thêm khách hàng thành công!', 'success');
+      //   } catch (error) {
+      //     console.error('Lỗi khi thêm khách hàng:', error);
+      //     addNotification('Lỗi khi thêm khách hàng!', 'error');
+      //   }
+      // };
+      // ==============================================
       // Bước 2: Tạo hợp đồng
       const PhongID_id = contractRoom.id;
       const DayPhong = contractRoom.building;
@@ -1436,7 +1530,7 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
       const SoLuongThanhVien = Number(formData.get('soLuongThanhVien')) || 1;
       const GhiChuHopDong = 'H';
       const ThoiHanHopDong = contractDuration + ' tháng';
-  
+
       const contractPayload = {
         PhongID_id,
         KhachHangID_id,
@@ -1451,7 +1545,7 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
         GhiChuHopDong,
         ThoiHanHopDong,
       };
-  
+
       await axios.post(
         'https://all-oqry.onrender.com/api/hopdong/them',
         contractPayload,
@@ -1461,7 +1555,7 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
           },
         }
       );
-  
+
       setRooms(
         rooms.map((room) =>
           room.id === contractRoom.id
@@ -1476,18 +1570,18 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
       addNotification('Lỗi khi thêm khách hàng hoặc tạo hợp đồng!', 'error');
     }
   };
-  
+
   // LẤY TẤT CẢ HỢP ĐỒNG
   // const fetchContracts = async () => {
   //   try {
   //     const token = Cookies.get('token');
-  
+
   //     const response = await axios.get('https://all-oqry.onrender.com/api/hopdong/', {
   //       headers: {
   //         ...(token && { Authorization: `Bearer ${token}` }),
   //       },
   //     });
-  
+
   //     const contracts = response.data;
   //     console.log('Danh sách hợp đồng:', contracts);
   //     return contracts;
@@ -1500,7 +1594,7 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
 
 
 
-  
+
   const handleDeleteRoom = (id: string) => {
     setRooms(rooms.filter((room) => room.id !== id))
   }
@@ -1510,13 +1604,29 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
     setIsDeleteDialogOpen(true)
   }
 
-  const handleConfirmDelete = () => {
-    if (roomToDelete) {
-      setRooms(rooms.filter((room) => room.id !== roomToDelete.id))
-      setIsDeleteDialogOpen(false)
-      setRoomToDelete(null)
+
+  // Xóa phòng
+  const handleConfirmDelete = async () => {
+    if (!roomToDelete) return;
+
+    const token = Cookies.get("token");
+
+    try {
+      await axios.delete(`https://all-oqry.onrender.com/api/phong/xoa/${roomToDelete.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // Xóa thành công → cập nhật danh sách phòng
+      setRooms(rooms.filter((room) => room.id !== roomToDelete.id));
+      setIsDeleteDialogOpen(false);
+      setRoomToDelete(null);
+    } catch (error) {
+      console.error("Lỗi xoá phòng:", error);
+      alert("Xóa phòng thất bại. Vui lòng thử lại.");
     }
-  }
+  };
 
   const handleMarkNotified = (contractId: string) => {
     setRooms((prevRooms) =>
@@ -1603,16 +1713,16 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
   }
 
   // Hàm lấy phòng theo ID (nếu cần)
-// Token
+  // Token
   const getRoomById = async (roomId: string) => {
     const token = Cookies.get("token");
-  
+
     if (!token || token === "null" || token === "undefined") {
       console.warn("Không có token → chuyển về /login");
       router.replace("/login");
       return null;
     }
-  
+
     try {
       const response = await axios.get(`https://all-oqry.onrender.com/api/phong/${roomId}`, {
         headers: {
@@ -1625,7 +1735,7 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
       return null;
     }
   };
-    const handleAddContractClick = (room: Room) => {
+  const handleAddContractClick = (room: Room) => {
     setContractRoom(room)
     setIsAddContractOpen(true)
   }
@@ -1689,97 +1799,49 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
     }
   }, [addContractStartDate, contractDuration])
 
- // Hàm thêm khách hàng mới
- 
- const handleAddCustomer = async (formData: FormData) => {
-  const token = Cookies.get("token");
 
-  if (!token || token === "null" || token === "undefined") {
-    console.warn("Không có token → chuyển về /login");
-    router.replace("/login");
-    return;
-  }
 
-  const payload = new FormData();
+  //  const handleAddCustomer = async (formData: FormData) => {
+  //   const payload = new FormData();
 
-  payload.append('HoTenKhachHang', formData.get('tenantName') || '');
-  payload.append('SoDienThoai', formData.get('tenantPhone') || '');
-  payload.append('NgaySinh', formData.get('tenantBirthDate') || '');
-  payload.append('GioiTinh', formData.get('tenantGender') || '');
-  payload.append('CongViec', formData.get('CongViec') || '');
-  payload.append('TinhThanh', formData.get('province') || '');
-  payload.append('QuanHuyen', formData.get('district') || '');
-  payload.append('PhuongXa', formData.get('ward') || '');
-  payload.append('DiaChiCuThe', formData.get('village') || '');
-  payload.append('SoCCCD', formData.get('tenantIdCard') || '');
-  payload.append('NgayCapCCCD', formData.get('NgayCapCCCD') || '');
-  payload.append('NoiCapCCCD', formData.get('NoiCapCCCD') || '');
+  //   payload.append('HoTenKhachHang', formData.get('tenantName') || '');
+  //   payload.append('SoDienThoai', formData.get('tenantPhone') || '');
+  //   payload.append('NgaySinh', formData.get('tenantBirthDate') || '');
+  //   payload.append('GioiTinh', formData.get('tenantGender') || '');
+  //   payload.append('CongViec', formData.get('CongViec') || '');
+  //   payload.append('TinhThanh', formData.get('province') || '');
+  //   payload.append('QuanHuyen', formData.get('district') || '');
+  //   payload.append('PhuongXa', formData.get('ward') || '');
+  //   payload.append('DiaChiCuThe', formData.get('village') || '');
+  //   payload.append('SoCCCD', formData.get('tenantIdCard') || '');
+  //   payload.append('NgayCapCCCD', formData.get('NgayCapCCCD') || '');
+  //   payload.append('NoiCapCCCD', formData.get('NoiCapCCCD') || '');
 
-  if (cccdImages.front) {
-    payload.append('CCCDMT', cccdImages.front);
-  }
+  //   if (cccdImages.front) {
+  //     payload.append('CCCDMT', cccdImages.front);
+  //   }
 
-  if (cccdImages.back) {
-    payload.append('CCCDMS', cccdImages.back);
-  }
+  //   if (cccdImages.back) {
+  //     payload.append('CCCDMS', cccdImages.back);
+  //   }
 
-  try {
-    const res = await axios.post('https://all-oqry.onrender.com/api/khachhang/them', payload, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        Authorization: `Bearer ${token}`, // 👈 THÊM TOKEN Ở ĐÂY
-      },
-    });
+  //   try {
+  //     const res = await axios.post('https://all-oqry.onrender.com/api/khachhang/them', payload, {
+  //       headers: {
+  //         'Content-Type': 'multipart/form-data',
+  //       },
+  //     });
+  //     console.log("✅ Đã thêm khách hàng:", res.data);
 
-    console.log("✅ Đã thêm khách hàng:", res.data);
-    addNotification('Thêm khách hàng thành công!', 'success');
-  } catch (error) {
-    console.error('Lỗi khi thêm khách hàng:', error);
-    addNotification('Lỗi khi thêm khách hàng!', 'error');
-  }
-};
-
-//  const handleAddCustomer = async (formData: FormData) => {
-//   const payload = new FormData();
-
-//   payload.append('HoTenKhachHang', formData.get('tenantName') || '');
-//   payload.append('SoDienThoai', formData.get('tenantPhone') || '');
-//   payload.append('NgaySinh', formData.get('tenantBirthDate') || '');
-//   payload.append('GioiTinh', formData.get('tenantGender') || '');
-//   payload.append('CongViec', formData.get('CongViec') || '');
-//   payload.append('TinhThanh', formData.get('province') || '');
-//   payload.append('QuanHuyen', formData.get('district') || '');
-//   payload.append('PhuongXa', formData.get('ward') || '');
-//   payload.append('DiaChiCuThe', formData.get('village') || '');
-//   payload.append('SoCCCD', formData.get('tenantIdCard') || '');
-//   payload.append('NgayCapCCCD', formData.get('NgayCapCCCD') || '');
-//   payload.append('NoiCapCCCD', formData.get('NoiCapCCCD') || '');
-
-//   if (cccdImages.front) {
-//     payload.append('CCCDMT', cccdImages.front);
-//   }
-
-//   if (cccdImages.back) {
-//     payload.append('CCCDMS', cccdImages.back);
-//   }
-
-//   try {
-//     const res = await axios.post('https://all-oqry.onrender.com/api/khachhang/them', payload, {
-//       headers: {
-//         'Content-Type': 'multipart/form-data',
-//       },
-//     });
-//     console.log("✅ Đã thêm khách hàng:", res.data);
-
-//     addNotification('Thêm khách hàng thành công!', 'success');
-//   } catch (error) {
-//     console.error('Lỗi khi thêm khách hàng:', error);
-//     addNotification('Lỗi khi thêm khách hàng!', 'error');
-//   }
-// };
+  //     addNotification('Thêm khách hàng thành công!', 'success');
+  //   } catch (error) {
+  //     console.error('Lỗi khi thêm khách hàng:', error);
+  //     addNotification('Lỗi khi thêm khách hàng!', 'error');
+  //   }
+  // };
 
   // Hàm cập nhật thông tin quản lý
-//Token
+  //Token
   const handleUpdateManager = async (data: {
     HoTenQuanLi: string,
     SoCCCD: string,
@@ -1792,13 +1854,13 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
   }) => {
     try {
       const token = Cookies.get("token")
-  
+
       if (!token || token === "null" || token === "undefined") {
         console.warn("Không có token → chuyển về /login")
         router.replace("/login")
         return
       }
-  
+
       await axios.post(
         'https://all-oqry.onrender.com/api/quanli/cap-nhat',
         data,
@@ -1808,14 +1870,14 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
           },
         }
       );
-  
+
       addNotification('Cập nhật thông tin quản lý thành công!', 'success');
     } catch (error) {
       console.error(error);
       addNotification('Lỗi khi cập nhật thông tin quản lý!', 'error');
     }
   }
-  
+
   // const handleUpdateManager = async (data: {
   //   HoTenQuanLi: string,
   //   SoCCCD: string,
@@ -1844,8 +1906,8 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
     representativeBirthDate: "",
   });
 
-  
-//Mitu ghi chu
+
+  //Mitu ghi chu
   useEffect(() => {
     const token = Cookies.get("token") // ✅ lấy từ cookie
     console.log("Token từ cookie:", token)
@@ -2478,7 +2540,7 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
                               variant="outline"
                               size="sm"
                               className="flex-1 bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200 text-xs h-9"
-                              onClick={() =>  handleAddContractClick(room)}
+                              onClick={() => handleAddContractClick(room)}
                             >
                               <Plus className="h-3 w-3 mr-1" />
                               Thêm Hợp Đồng
@@ -2531,14 +2593,24 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
                               <FileText className="h-3 w-3 mr-1" />
                               Chi Tiết Hợp Đồng
                             </Button>
-                            <Button
+                            {/* <Button
                               variant="outline"
                               size="sm"
                               className="text-red-600 hover:text-red-700 bg-transparent h-9 px-3"
                               onClick={() => handleDeleteRoomClick(room)}
                             >
                               <Trash2 className="h-3 w-3" />
-                            </Button>
+                            </Button> */}
+                            {/* <Button
+  variant="outline"
+  size="sm"
+  className="text-yellow-600 hover:text-yellow-700 bg-transparent h-9 px-3"
+  onClick={() => handleCancelContractClick(room.contractId, room.number)}
+>
+  <Ban className="h-3 w-3 mr-1" />
+  Hủy HĐ
+</Button> */}
+
                           </>
                         ) : null}
                       </div>
@@ -2623,23 +2695,76 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
 
                 <div className="space-y-3 lg:space-y-6 py-2">
                   {/* Thông tin hợp đồng tổng quan */}
-                  <div className="bg-blue-100 border border-blue-200 rounded-lg p-4 mb-4">
-                    <h3 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
-                      <FileText className="h-4 w-4" /> Thông tin hợp đồng
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                      <div><span className="font-medium">Số hợp đồng:</span> {selectedRoom.contractNumber || 'Không có'}</div>
-                      <div><span className="font-medium">Ngày tạo hợp đồng:</span> {selectedRoom.contractCreatedAt ? new Date(selectedRoom.contractCreatedAt).toLocaleDateString('vi-VN') : 'Không có'}</div>
-                      <div><span className="font-medium">Ngày bắt đầu:</span> {selectedRoom.contractStartDate ? new Date(selectedRoom.contractStartDate).toLocaleDateString('vi-VN') : 'Không có'}</div>
-                      <div><span className="font-medium">Ngày kết thúc:</span> {selectedRoom.contractEndDate ? new Date(selectedRoom.contractEndDate).toLocaleDateString('vi-VN') : 'Không có'}</div>
-                      <div><span className="font-medium">Thời hạn hợp đồng:</span> {selectedRoom.contractStartDate && selectedRoom.contractEndDate ? `${Math.ceil((new Date(selectedRoom.contractEndDate).getTime() - new Date(selectedRoom.contractStartDate).getTime()) / (1000 * 60 * 60 * 24 * 30))} tháng` : 'Không có'}</div>
-                      <div><span className="font-medium">Trạng thái hợp đồng:</span> {selectedRoom.contractEndDate ? getContractStatus(selectedRoom.contractEndDate) === 'expired' ? 'Đã hết hạn' : getContractStatus(selectedRoom.contractEndDate) === 'expiring' ? 'Sắp hết hạn' : 'Còn hiệu lực' : 'Không có'}</div>
-                      <div><span className="font-medium">Số tiền cọc:</span> {selectedRoom.price ? `${selectedRoom.price.toLocaleString()}₫` : 'Không có'}</div>
-                      <div><span className="font-medium">Số tiền thuê:</span> {selectedRoom.price ? `${selectedRoom.price.toLocaleString()}₫/tháng` : 'Không có'}</div>
-                      <div><span className="font-medium">Tên khách thuê:</span> {selectedRoom.tenant || 'Không có'}</div>
-                      <div><span className="font-medium">Số điện thoại khách thuê:</span> {selectedRoom.tenantPhone || 'Không có'}</div>
+                  {selectedRoom && (
+                    <div className="space-y-3 lg:space-y-6 py-2">
+                      {/* Thông tin hợp đồng tổng quan */}
+                      <div className="bg-blue-100 border border-blue-200 rounded-lg p-4 mb-4">
+                        <h3 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                          <FileText className="h-4 w-4" /> Thông tin hợp đồng
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="font-medium">Số hợp đồng:</span>{' '}
+                            {selectedRoom.contractNumber || 'Không có'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Ngày tạo hợp đồng:</span>{' '}
+                            {selectedRoom.contractCreatedAt
+                              ? new Date(selectedRoom.contractCreatedAt).toLocaleDateString('vi-VN')
+                              : 'Không có'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Ngày bắt đầu:</span>{' '}
+                            {selectedRoom.contractStartDate
+                              ? new Date(selectedRoom.contractStartDate).toLocaleDateString('vi-VN')
+                              : 'Không có'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Ngày kết thúc:</span>{' '}
+                            {selectedRoom.contractEndDate
+                              ? new Date(selectedRoom.contractEndDate).toLocaleDateString('vi-VN')
+                              : 'Không có'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Thời hạn hợp đồng:</span>{' '}
+                            {selectedRoom.contractStartDate && selectedRoom.contractEndDate
+                              ? `${Math.ceil(
+                                (new Date(selectedRoom.contractEndDate).getTime() -
+                                  new Date(selectedRoom.contractStartDate).getTime()) /
+                                (1000 * 60 * 60 * 24 * 30)
+                              )} tháng`
+                              : 'Không có'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Trạng thái hợp đồng:</span>{' '}
+                            {selectedRoom.contractEndDate
+                              ? getContractStatus(selectedRoom.contractEndDate) === 'expired'
+                                ? 'Đã hết hạn'
+                                : getContractStatus(selectedRoom.contractEndDate) === 'expiring'
+                                  ? 'Sắp hết hạn'
+                                  : 'Còn hiệu lực'
+                              : 'Không có'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Số tiền cọc:</span>{' '}
+                            {selectedRoom.price ? `${selectedRoom.price.toLocaleString()}₫` : 'Không có'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Số tiền thuê:</span>{' '}
+                            {selectedRoom.price ? `${selectedRoom.price.toLocaleString()}₫/tháng` : 'Không có'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Tên khách thuê:</span>{' '}
+                            {selectedRoom.tenant || 'Không có'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Số điện thoại khách thuê:</span>{' '}
+                            {selectedRoom.tenantPhone || 'Không có'}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Contract Status */}
                   <div className="flex items-center justify-between p-2 lg:p-4 bg-blue-50 rounded-lg">
@@ -3354,7 +3479,7 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
                           <Label htmlFor="tenantGender" className="text-xs font-medium text-gray-700">
                             Giới tính
                           </Label>
-                           <Input
+                          <Input
                             id="representativeGender"
                             name="representativeGender"
                             value={landlordInfo.representativeGender || ""}
@@ -3637,106 +3762,106 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
                     </div>
                   </div>
 
-                 {/* CCCD Images */}
-<div className="space-y-3">
-  <h3 className="text-sm lg:text-base font-medium text-gray-900 border-b pb-2 flex items-center gap-2">
-    <FileText className="h-4 w-4" />
-    Hình ảnh CCCD/CMND
-  </h3>
+                  {/* CCCD Images */}
+                  <div className="space-y-3">
+                    <h3 className="text-sm lg:text-base font-medium text-gray-900 border-b pb-2 flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Hình ảnh CCCD/CMND
+                    </h3>
 
-  <div className="bg-gray-50 p-4 rounded-lg space-y-4">
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {/* CCCD Front */}
-      <div className="space-y-2">
-        <Label className="text-xs font-medium text-gray-700">CCCD/CMND mặt trước</Label>
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
-          {cccdImages.front ? (
-            <div className="relative">
-              <img
-                src={cccdImages.front.preview}
-                alt="CCCD mặt trước"
-                className="w-full h-32 object-cover rounded"
-              />
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                className="absolute top-1 right-1 h-6 w-6 p-0"
-                onClick={() => removeImage("front")}
-              >
-                ×
-              </Button>
-            </div>
-          ) : (
-            <>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleImageUpload(e, "front")}
-                className="hidden"
-                id="cccd-front"
-              />
-              <label htmlFor="cccd-front" className="cursor-pointer block">
-                <div className="text-gray-500">
-                  <FileText className="h-8 w-8 mx-auto mb-2" />
-                  <p className="text-sm">Chọn ảnh CCCD mặt trước</p>
-                  <p className="text-xs text-gray-400">PNG, JPG tối đa 5MB</p>
-                </div>
-              </label>
-            </>
-          )}
-        </div>
-      </div>
+                    <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* CCCD Front */}
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium text-gray-700">CCCD/CMND mặt trước</Label>
+                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
+                            {cccdImages.front ? (
+                              <div className="relative">
+                                <img
+                                  src={cccdImages.front.preview}
+                                  alt="CCCD mặt trước"
+                                  className="w-full h-32 object-cover rounded"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="sm"
+                                  className="absolute top-1 right-1 h-6 w-6 p-0"
+                                  onClick={() => removeImage("front")}
+                                >
+                                  ×
+                                </Button>
+                              </div>
+                            ) : (
+                              <>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handleImageUpload(e, "front")}
+                                  className="hidden"
+                                  id="cccd-front"
+                                />
+                                <label htmlFor="cccd-front" className="cursor-pointer block">
+                                  <div className="text-gray-500">
+                                    <FileText className="h-8 w-8 mx-auto mb-2" />
+                                    <p className="text-sm">Chọn ảnh CCCD mặt trước</p>
+                                    <p className="text-xs text-gray-400">PNG, JPG tối đa 5MB</p>
+                                  </div>
+                                </label>
+                              </>
+                            )}
+                          </div>
+                        </div>
 
-      {/* CCCD Back */}
-      <div className="space-y-2">
-        <Label className="text-xs font-medium text-gray-700">CCCD/CMND mặt sau</Label>
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
-          {cccdImages.back ? (
-            <div className="relative">
-              <img
-                src={cccdImages.back.preview}
-                alt="CCCD mặt sau"
-                className="w-full h-32 object-cover rounded"
-              />
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                className="absolute top-1 right-1 h-6 w-6 p-0"
-                onClick={() => removeImage("back")}
-              >
-                ×
-              </Button>
-            </div>
-          ) : (
-            <>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleImageUpload(e, "back")}
-                className="hidden"
-                id="cccd-back"
-              />
-              <label htmlFor="cccd-back" className="cursor-pointer block">
-                <div className="text-gray-500">
-                  <FileText className="h-8 w-8 mx-auto mb-2" />
-                  <p className="text-sm">Chọn ảnh CCCD mặt sau</p>
-                  <p className="text-xs text-gray-400">PNG,JPG tối đa 5MB</p>
-                </div>
-              </label>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+                        {/* CCCD Back */}
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium text-gray-700">CCCD/CMND mặt sau</Label>
+                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
+                            {cccdImages.back ? (
+                              <div className="relative">
+                                <img
+                                  src={cccdImages.back.preview}
+                                  alt="CCCD mặt sau"
+                                  className="w-full h-32 object-cover rounded"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="sm"
+                                  className="absolute top-1 right-1 h-6 w-6 p-0"
+                                  onClick={() => removeImage("back")}
+                                >
+                                  ×
+                                </Button>
+                              </div>
+                            ) : (
+                              <>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handleImageUpload(e, "back")}
+                                  className="hidden"
+                                  id="cccd-back"
+                                />
+                                <label htmlFor="cccd-back" className="cursor-pointer block">
+                                  <div className="text-gray-500">
+                                    <FileText className="h-8 w-8 mx-auto mb-2" />
+                                    <p className="text-sm">Chọn ảnh CCCD mặt sau</p>
+                                    <p className="text-xs text-gray-400">PNG,JPG tối đa 5MB</p>
+                                  </div>
+                                </label>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
 
-    <div className="bg-blue-100 p-3 rounded text-sm text-blue-800">
-      <strong>Lưu ý:</strong> Hình ảnh CCCD/CMND sẽ được lưu trữ để phục vụ cho việc quản lý hợp đồng.
-      Vui lòng đảm bảo hình ảnh rõ nét và đầy đủ thông tin.
-    </div>
-  </div>
-</div>
+                      <div className="bg-blue-100 p-3 rounded text-sm text-blue-800">
+                        <strong>Lưu ý:</strong> Hình ảnh CCCD/CMND sẽ được lưu trữ để phục vụ cho việc quản lý hợp đồng.
+                        Vui lòng đảm bảo hình ảnh rõ nét và đầy đủ thông tin.
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Contract Duration */}
                   <div className="space-y-3">
@@ -3815,23 +3940,23 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
                       <option value="12 tháng">12 tháng</option>
                     </select>
                   </div>
-              {/* Số lượng thành viên ở */}
-              <div className="mt-4">
-                        <Label htmlFor="soLuongThanhVien" className="text-xs font-medium text-gray-700">
-                          Số lượng thành viên ở *
-                        </Label>
-                        <Input
-                          id="soLuongThanhVien"
-                          name="soLuongThanhVien"
-                          type="number"
-                          min="1"
-                          required
-                          className="mt-1 h-9 text-sm"
-                          value={soLuongThanhVien}
-                          onChange={e => setSoLuongThanhVien(Number(e.target.value))}
-                        />
-                      </div>
-                      {/* Thành viên ở cùng */}
+                  {/* Số lượng thành viên ở */}
+                  <div className="mt-4">
+                    <Label htmlFor="soLuongThanhVien" className="text-xs font-medium text-gray-700">
+                      Số lượng thành viên ở *
+                    </Label>
+                    <Input
+                      id="soLuongThanhVien"
+                      name="soLuongThanhVien"
+                      type="number"
+                      min="1"
+                      required
+                      className="mt-1 h-9 text-sm"
+                      value={soLuongThanhVien}
+                      onChange={e => setSoLuongThanhVien(Number(e.target.value))}
+                    />
+                  </div>
+                  {/* Thành viên ở cùng */}
                   {/* Contract Terms Preview */}
                   <div className="space-y-3">
                     <h3 className="text-sm lg:text-base font-medium text-gray-900 border-b pb-2">
@@ -4113,7 +4238,7 @@ const handleEditRoom = async (e: React.FormEvent<HTMLFormElement>) => {
           </div>
         )}
 
-        {/* Delete Room Confirmation Dialog */}
+        {/* Xóa phòng*/}
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <DialogContent className="max-w-xs mx-auto text-center">
             <DialogHeader>
