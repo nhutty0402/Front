@@ -1,0 +1,345 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap");
+
+/* Import Font Awesome */
+@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css");
+
+/* CSS Variables using project theme colors */
+:root {
+  --primary: hsl(0 0% 9%);
+  --primary-foreground: hsl(0 0% 98%);
+  --secondary: hsl(0 0% 96.1%);
+  --secondary-foreground: hsl(0 0% 9%);
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(0 0% 3.9%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(0 0% 3.9%);
+  --muted: hsl(0 0% 96.1%);
+  --muted-foreground: hsl(0 0% 45.1%);
+  --accent: hsl(0 0% 96.1%);
+  --accent-foreground: hsl(0 0% 9%);
+  --destructive: hsl(0 84.2% 60.2%);
+  --destructive-foreground: hsl(0 0% 98%);
+  --border: hsl(0 0% 89.8%);
+  --input: hsl(0 0% 89.8%);
+  --ring: hsl(0 0% 3.9%);
+  --radius: 0.5rem;
+}
+
+.dark {
+  --primary: hsl(0 0% 98%);
+  --primary-foreground: hsl(0 0% 9%);
+  --secondary: hsl(0 0% 14.9%);
+  --secondary-foreground: hsl(0 0% 98%);
+  --background: hsl(0 0% 3.9%);
+  --foreground: hsl(0 0% 98%);
+  --card: hsl(0 0% 3.9%);
+  --card-foreground: hsl(0 0% 98%);
+  --muted: hsl(0 0% 14.9%);
+  --muted-foreground: hsl(0 0% 63.9%);
+  --accent: hsl(0 0% 14.9%);
+  --accent-foreground: hsl(0 0% 98%);
+  --destructive: hsl(0 62.8% 30.6%);
+  --destructive-foreground: hsl(0 0% 98%);
+  --border: hsl(0 0% 14.9%);
+  --input: hsl(0 0% 14.9%);
+  --ring: hsl(0 0% 83.1%);
+}
+
+/* Custom styles for login form */
+.login-form-container {
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Mobile-first responsive design */
+.login-form-card {
+  width: 100%;
+  max-width: 500px;
+  min-height: 420px;
+  padding: 2rem 1.5rem;
+  margin: 1rem;
+  background: var(--card);
+  border-radius: 0 2rem;
+  box-shadow: 
+    -4px -4px 8px rgba(255, 255, 255, 0.45),
+    3px 3px 6px rgba(99, 73, 66, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+}
+
+/* Mobile styles */
+@media (max-width: 640px) {
+  .login-form-card {
+    margin: 0.5rem;
+    padding: 1.5rem 1rem;
+    min-height: 380px;
+    border-radius: 0 1.5rem;
+  }
+  
+  .login-form-title {
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .login-form-field {
+    margin-bottom: 1rem;
+  }
+  
+  .login-form-input {
+    height: 3rem;
+    font-size: 1rem;
+    padding-left: 3rem;
+  }
+  
+  .login-form-icon {
+    left: 1rem;
+    font-size: 1rem;
+  }
+  
+  .login-form-label {
+    left: 3rem;
+    font-size: 0.875rem;
+  }
+  
+  .login-form-button {
+    height: 3rem;
+    font-size: 1.125rem;
+    margin-top: 1rem;
+  }
+  
+  .login-form-link {
+    font-size: 0.875rem;
+    margin-top: 1rem;
+  }
+}
+
+/* Tablet styles */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .login-form-card {
+    max-width: 450px;
+    padding: 2.5rem 2rem;
+  }
+}
+
+/* Desktop styles */
+@media (min-width: 1025px) {
+  .login-form-card {
+    max-width: 500px;
+    padding: 2.5rem;
+  }
+}
+
+/* Floating label animation */
+.login-input-container {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.login-input-container input:focus + label,
+.login-input-container input:not(:placeholder-shown) + label {
+  opacity: 0;
+  transform: translateY(-50%) translateX(-10px);
+  transition: all 0.2s ease;
+}
+
+/* Enhanced input styles */
+.login-form-input {
+  width: 100%;
+  height: 3.5rem;
+  padding: 0 1.25rem 0 3rem;
+  font-size: 1rem;
+  background: var(--background);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 1.5rem;
+  box-shadow: 
+    inset 1.5px 1.5px 4.5px var(--muted),
+    inset -4.5px -4.5px 9.5px rgba(255, 255, 255, 0.45);
+  transition: all 0.2s ease;
+}
+
+.login-form-input:focus {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 
+    inset 1px 1px 2px var(--muted),
+    inset -1px -1px 2px rgba(255, 255, 255, 0.45),
+    0 0 0 2px var(--ring);
+}
+
+.login-form-icon {
+  position: absolute;
+  left: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted-foreground);
+  font-size: 1.125rem;
+  pointer-events: none;
+  transition: color 0.2s ease;
+}
+
+.login-form-input:focus + .login-form-icon {
+  color: var(--ring);
+}
+
+.login-form-label {
+  position: absolute;
+  left: 3rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted-foreground);
+  font-size: 1rem;
+  pointer-events: none;
+  transition: all 0.2s ease;
+  background: var(--background);
+  padding: 0 0.5rem;
+}
+
+/* Button styles */
+.login-form-button {
+  width: 100%;
+  height: 3.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: 1.5rem;
+  box-shadow: 
+    1.5px 1.5px 4.5px var(--muted),
+    -4.5px -4.5px 9.5px rgba(255, 255, 255, 0.45);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.login-form-button:hover {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  transform: translateY(-1px);
+  box-shadow: 
+    2px 2px 6px var(--muted),
+    -6px -6px 12px rgba(255, 255, 255, 0.45);
+}
+
+.login-form-button:active {
+  transform: translateY(0);
+  box-shadow: 
+    inset 1.5px 1.5px 4.5px var(--muted),
+    inset -4.5px -4.5px 9.5px rgba(255, 255, 255, 0.45);
+}
+
+.login-form-button:focus {
+  outline: none;
+  box-shadow: 
+    inset 1.5px 1.5px 4.5px var(--muted),
+    inset -4.5px -4.5px 9.5px rgba(255, 255, 255, 0.45),
+    0 0 0 2px var(--ring);
+}
+
+/* Link styles */
+.login-form-link {
+  text-align: center;
+  margin-top: 1.5rem;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+.login-form-link a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.login-form-link a:hover {
+  color: var(--ring);
+  text-decoration: underline;
+}
+
+/* Notification styles */
+.notification {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.25rem;
+  padding: 1rem 1.25rem;
+  border-radius: 0.5rem;
+  color: white;
+  z-index: 1000;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  max-width: 350px;
+  word-wrap: break-word;
+}
+
+.notification-success {
+  background: hsl(142 76% 36%);
+}
+
+.notification-error {
+  background: var(--destructive);
+}
+
+/* Animation for notifications */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+.notification-enter {
+  animation: slideIn 0.5s ease-out forwards;
+}
+
+.notification-exit {
+  animation: fadeOut 0.5s forwards;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--muted);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--muted-foreground);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--foreground);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .login-form-card {
+    background: var(--card);
+    border-color: var(--border);
+  }
+  
+  .login-form-input {
+    background: var(--background);
+    color: var(--foreground);
+    border-color: var(--border);
+  }
+  
+  .login-form-button {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+} 

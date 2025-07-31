@@ -1,0 +1,31 @@
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+
+export function middleware(request: NextRequest) {
+  const token = request.cookies.get('token')?.value
+  const pathname = request.nextUrl.pathname
+
+  const isAuth = !!token
+  const isLoginPage = pathname === '/login'
+  const isProtectedPage = pathname === '/' || pathname.startsWith('/rooms')
+
+  // Nếu chưa đăng nhập và cố vào trang cần bảo vệ
+  if (!isAuth && isProtectedPage) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  // Nếu đã đăng nhập mà cố vào trang login thì chuyển hướng về /
+  if (isAuth && isLoginPage) {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
+
+  return NextResponse.next()
+}
+
+export const config = {
+  matcher: [
+    '/',           // Trang chính
+    '/login',      // Trang login
+    '/rooms/:path*', // Trang quản lý phòng
+  ],
+}

@@ -1,0 +1,5 @@
+/* styles/dialog-transparent.css */
+.dialog-overlay, .fixed.inset-0.bg-black, .bg-black, .bg-black\/50, .bg-black\/80, .backdrop-blur, [style*="background: rgba(0,0,0"] {
+  background: transparent !important;
+  backdrop-filter: none !important;
+} 
