@@ -1,4 +1,3 @@
-
 "use client"; // 👈 Đảm bảo có dòng này trên cùng
 import Cookies from 'js-cookie'
 import React from "react"
@@ -104,6 +103,20 @@ interface Room {
   cccdBack?: string
   contractNumber?: string
   contractCreatedAt?: string
+  // API response fields
+  PhongID?: number
+  SoPhong?: string
+  DayPhong?: string
+  GiaPhong?: string
+  TrangThaiPhong?: string
+  MoTaPhong?: string
+  DienTich?: string
+  TienIch?: string[]
+  HopDongID?: number | null
+  KhachHangID_id?: number | null
+  NgayBatDau?: string | null
+  NgayKetThuc?: string | null
+  TrangThaiHopDong?: string | null
 }
 
 interface ContractNotification {
@@ -514,6 +527,20 @@ const RoomsPage: FunctionComponent = () => {
           status: mapRoomStatus(phong.TrangThaiPhong),
           amenities: phong.TienIch || [],
           description: phong.MoTaPhong,
+          // Include API response fields
+          PhongID: phong.PhongID,
+          SoPhong: phong.SoPhong,
+          DayPhong: phong.DayPhong,
+          GiaPhong: phong.GiaPhong,
+          TrangThaiPhong: phong.TrangThaiPhong,
+          MoTaPhong: phong.MoTaPhong,
+          DienTich: phong.DienTich,
+          TienIch: phong.TienIch,
+          HopDongID: phong.HopDongID,
+          KhachHangID_id: phong.KhachHangID_id,
+          NgayBatDau: phong.NgayBatDau,
+          NgayKetThuc: phong.NgayKetThuc,
+          TrangThaiHopDong: phong.TrangThaiHopDong,
         }));
 
         // Lấy hợp đồng
@@ -1701,10 +1728,7 @@ const RoomsPage: FunctionComponent = () => {
     }
   }
 
-  const handleViewContractDetails = (room: Room) => {
-    setSelectedRoom(room)
-    setIsContractDetailsOpen(true)
-  }
+
 
   const handleEditRoomClick = (room: Room) => {
     setEditingRoom(room)
@@ -1904,6 +1928,11 @@ const RoomsPage: FunctionComponent = () => {
     representativeGender: "",
     representativeIdCard: "",
     representativeBirthDate: "",
+    name: "",
+    phone: "",
+    email: "",
+    idNumber: "",
+    taxCode: "",
   });
 
 
@@ -1932,14 +1961,19 @@ const RoomsPage: FunctionComponent = () => {
 
         const data = await res.json();
         setLandlordInfo({
-          representative: data.HoTenQuanLi,
-          address: data.DiaChiChiTiet,
-          representativeProvince: data.ThanhPho,
-          representativeDistrict: data.Quan,
-          representativeWard: data.Phuong,
-          representativeGender: data.GioiTinh,
-          representativeIdCard: data.SoCCCD,
+          representative: data.HoTenQuanLi || "",
+          address: data.DiaChiChiTiet || "",
+          representativeProvince: data.ThanhPho || "",
+          representativeDistrict: data.Quan || "",
+          representativeWard: data.Phuong || "",
+          representativeGender: data.GioiTinh || "",
+          representativeIdCard: data.SoCCCD || "",
           representativeBirthDate: data.NgaySinh?.slice(0, 10) || "",
+          name: data.HoTenQuanLi || "",
+          phone: data.SoDienThoai || "",
+          email: data.Email || "",
+          idNumber: data.SoCCCD || "",
+          taxCode: data.MaSoThue || "",
         });
       } catch (error) {
         console.error("Lỗi lấy thông tin quản lý:", error);
@@ -1948,6 +1982,42 @@ const RoomsPage: FunctionComponent = () => {
 
     fetchLandlordInfo();
   }, [router]);
+
+  const [contractDetail, setContractDetail] = React.useState<any>(null);
+  const [contractDetailId, setContractDetailId] = React.useState<string | number | null>(null);
+
+  // Khi mở dialog chi tiết hợp đồng, truyền HopDongID
+  const handleViewContractDetails = (room: Room) => {
+    setSelectedRoom(room);
+    setIsContractDetailsOpen(true);
+    // Ưu tiên lấy HopDongID từ room.HopDongID hoặc room.contractNumber
+    if (room.HopDongID) {
+      setContractDetailId(room.HopDongID);
+    } else if (room.contractNumber) {
+      setContractDetailId(room.contractNumber);
+    } else {
+      setContractDetailId(null);
+    }
+  };
+
+  // Gọi API chi tiết hợp đồng khi contractDetailId thay đổi và dialog mở
+  React.useEffect(() => {
+    if (!isContractDetailsOpen || !contractDetailId) return;
+    const token = Cookies.get("token");
+    if (!token || token === "null" || token === "undefined") {
+      router.replace("/login");
+      return;
+    }
+    axios.get(`https://all-oqry.onrender.com/api/hopdong/chi-tiet/${contractDetailId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => {
+        setContractDetail(res.data);
+      })
+      .catch(() => setContractDetail(null));
+  }, [isContractDetailsOpen, contractDetailId]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -2695,9 +2765,66 @@ const RoomsPage: FunctionComponent = () => {
 
                 <div className="space-y-3 lg:space-y-6 py-2">
                   {/* Thông tin hợp đồng tổng quan */}
-                  {selectedRoom && (
+                  {contractDetail ? (
                     <div className="space-y-3 lg:space-y-6 py-2">
-                      {/* Thông tin hợp đồng tổng quan */}
+                      {/* Thông tin hợp đồng từ API */}
+                      <div className="bg-blue-100 border border-blue-200 rounded-lg p-4 mb-4">
+                        <h3 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                          <FileText className="h-4 w-4" /> Thông tin hợp đồng
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="font-medium">Số hợp đồng:</span>{' '}
+                            {contractDetail.HopDongID || 'Không có'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Ngày tạo hợp đồng:</span>{' '}
+                            {contractDetail.NgayTaoHopDong
+                              ? new Date(contractDetail.NgayTaoHopDong).toLocaleDateString('vi-VN')
+                              : 'Không có'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Ngày bắt đầu:</span>{' '}
+                            {contractDetail.NgayBatDau
+                              ? new Date(contractDetail.NgayBatDau).toLocaleDateString('vi-VN')
+                              : 'Không có'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Ngày kết thúc:</span>{' '}
+                            {contractDetail.NgayKetThuc
+                              ? new Date(contractDetail.NgayKetThuc).toLocaleDateString('vi-VN')
+                              : 'Không có'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Thời hạn hợp đồng:</span>{' '}
+                            {contractDetail.ThoiHanHopDong || contractDetail.ChuKy || 'Không có'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Trạng thái hợp đồng:</span>{' '}
+                            {contractDetail.TrangThaiHopDong || 'Không có'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Số tiền cọc:</span>{' '}
+                            {contractDetail.TienDatCoc ? `${Number(contractDetail.TienDatCoc).toLocaleString()}₫` : 'Không có'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Số tiền thuê:</span>{' '}
+                            {selectedRoom?.price ? `${selectedRoom.price.toLocaleString()}₫/tháng` : 'Không có'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Số lượng thành viên:</span>{' '}
+                            {contractDetail.SoLuongThanhVien || 'Không có'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Ghi chú hợp đồng:</span>{' '}
+                            {contractDetail.GhiChuHopDong || 'Không có'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : selectedRoom && (
+                    <div className="space-y-3 lg:space-y-6 py-2">
+                      {/* Thông tin hợp đồng từ selectedRoom (fallback) */}
                       <div className="bg-blue-100 border border-blue-200 rounded-lg p-4 mb-4">
                         <h3 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
                           <FileText className="h-4 w-4" /> Thông tin hợp đồng
@@ -2773,27 +2900,107 @@ const RoomsPage: FunctionComponent = () => {
                       <p className="text-xs text-gray-600">Tình trạng hiện tại</p>
                     </div>
                     {(() => {
-                      const contractStatus = selectedRoom.contractEndDate
-                        ? getContractStatus(selectedRoom.contractEndDate)
-                        : null
-                      return (
-                        <Badge
-                          className={`px-2 py-0.5 text-xs ${contractStatus === "expired"
-                            ? "bg-red-500"
-                            : contractStatus === "expiring"
-                              ? "bg-orange-500"
-                              : "bg-green-500"
-                            }`}
-                        >
-                          {contractStatus === "expired"
-                            ? "Đã hết hạn"
-                            : contractStatus === "expiring"
-                              ? "Sắp hết hạn"
-                              : "Còn hiệu lực"}
-                        </Badge>
-                      )
+                      if (contractDetail) {
+                        // Sử dụng dữ liệu từ API
+                        const status = contractDetail.TrangThaiHopDong;
+                        let statusText = status;
+                        let statusColor = "bg-gray-500";
+                        
+                        switch (status) {
+                          case "HoatDong":
+                            statusText = "Hoạt động";
+                            statusColor = "bg-green-500";
+                            break;
+                          case "DaHuy":
+                            statusText = "Đã hủy";
+                            statusColor = "bg-red-500";
+                            break;
+                          case "HetHan":
+                            statusText = "Hết hạn";
+                            statusColor = "bg-orange-500";
+                            break;
+                          default:
+                            statusText = status || "Không xác định";
+                            statusColor = "bg-gray-500";
+                        }
+                        
+                        return (
+                          <Badge className={`px-2 py-0.5 text-xs ${statusColor}`}>
+                            {statusText}
+                          </Badge>
+                        );
+                      } else {
+                        // Fallback sử dụng selectedRoom
+                        const contractStatus = selectedRoom.contractEndDate
+                          ? getContractStatus(selectedRoom.contractEndDate)
+                          : null
+                        return (
+                          <Badge
+                            className={`px-2 py-0.5 text-xs ${contractStatus === "expired"
+                              ? "bg-red-500"
+                              : contractStatus === "expiring"
+                                ? "bg-orange-500"
+                                : "bg-green-500"
+                              }`}
+                          >
+                            {contractStatus === "expired"
+                              ? "Đã hết hạn"
+                              : contractStatus === "expiring"
+                                ? "Sắp hết hạn"
+                                : "Còn hiệu lực"}
+                          </Badge>
+                        )
+                      }
                     })()}
                   </div>
+
+                  {/* Customer Information */}
+                  {contractDetail && (
+                    <div className="space-y-3">
+                      <h3 className="text-sm lg:text-base font-medium text-gray-900 border-b pb-2 flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        Thông tin Bên B (Bên thuê)
+                      </h3>
+                      <div className="bg-yellow-50 p-4 rounded-lg space-y-2 text-sm">
+                        <div>
+                          <strong>Mã khách hàng:</strong> {contractDetail.KhachHangID_id || 'Không có'}
+                        </div>
+                        <div>
+                          <strong>Mã phòng:</strong> {contractDetail.PhongID_id || 'Không có'}
+                        </div>
+                        <div>
+                          <strong>Ngày bắt đầu:</strong> {contractDetail.NgayBatDau ? new Date(contractDetail.NgayBatDau).toLocaleDateString('vi-VN') : 'Không có'}
+                        </div>
+                        <div>
+                          <strong>Ngày kết thúc:</strong> {contractDetail.NgayKetThuc ? new Date(contractDetail.NgayKetThuc).toLocaleDateString('vi-VN') : 'Không có'}
+                        </div>
+                        <div>
+                          <strong>Chu kỳ:</strong> {contractDetail.ChuKy || 'Không có'}
+                        </div>
+                        <div>
+                          <strong>Tiền đặt cọc:</strong> {contractDetail.TienDatCoc ? `${Number(contractDetail.TienDatCoc).toLocaleString()}₫` : 'Không có'}
+                        </div>
+                        <div>
+                          <strong>Trạng thái hợp đồng:</strong> {contractDetail.TrangThaiHopDong || 'Không có'}
+                        </div>
+                        <div>
+                          <strong>Ngày tạo hợp đồng:</strong> {contractDetail.NgayTaoHopDong ? new Date(contractDetail.NgayTaoHopDong).toLocaleDateString('vi-VN') : 'Không có'}
+                        </div>
+                        <div>
+                          <strong>Số lượng thành viên:</strong> {contractDetail.SoLuongThanhVien || 'Không có'}
+                        </div>
+                        <div>
+                          <strong>Thời hạn hợp đồng:</strong> {contractDetail.ThoiHanHopDong || 'Không có'}
+                        </div>
+                        <div>
+                          <strong>Ghi chú hợp đồng:</strong> {contractDetail.GhiChuHopDong || 'Không có'}
+                        </div>
+                        <div>
+                          <strong>Quản lý ID:</strong> {contractDetail.QuanLiID_id || 'Không có'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Landlord Information */}
                   <div className="space-y-3">
@@ -2876,7 +3083,7 @@ const RoomsPage: FunctionComponent = () => {
                   </div>
 
                   {/* Tenant Information */}
-                  {selectedRoom.tenant && (
+                  {!contractDetail && selectedRoom.tenant && (
                     <div className="space-y-2">
                       <h3 className="text-sm lg:text-base font-medium text-gray-900 border-b pb-2 flex items-center gap-2">
                         <User className="h-4 w-4" />
