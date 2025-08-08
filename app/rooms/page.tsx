@@ -267,10 +267,36 @@ const statusLabels = {
 
 
 
-// Helper function to calculate days until contract expiry
+// Helper function to calculate days until contract expiry (normalized to local midnight to avoid timezone off-by-one)
 const getDaysUntilExpiry = (endDate: string): number => {
-  const today = new Date()
-  const expiry = new Date(endDate)
+  if (!endDate) return NaN
+
+  // Parse supported formats safely into local date (YYYY-MM-DD or DD/MM/YYYY)
+  let year: number
+  let monthIndex: number
+  let day: number
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+    const [y, m, d] = endDate.split("-").map(Number)
+    year = y
+    monthIndex = m - 1
+    day = d
+  } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(endDate)) {
+    const [d, m, y] = endDate.split("/").map(Number)
+    year = y
+    monthIndex = m - 1
+    day = d
+  } else {
+    const parsed = new Date(endDate)
+    if (isNaN(parsed.getTime())) return NaN
+    year = parsed.getFullYear()
+    monthIndex = parsed.getMonth()
+    day = parsed.getDate()
+  }
+
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const expiry = new Date(year, monthIndex, day)
   const diffTime = expiry.getTime() - today.getTime()
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   return diffDays
@@ -385,6 +411,7 @@ const RoomsPage: FunctionComponent = () => {
   const [isAddContractOpen, setIsAddContractOpen] = useState(false)
   const [contractRoom, setContractRoom] = useState<Room | null>(null)
   const [extensionMonths, setExtensionMonths] = useState<number>(12)
+  const [extensionPaymentCycle, setExtensionPaymentCycle] = useState<string>("1 tháng")
 
   // const [landlordInfo, setLandlordInfo] = useState({
   //   name: "Công ty TNHH Quản lý Nhà trọ ABC",
@@ -909,6 +936,7 @@ const RoomsPage: FunctionComponent = () => {
   const handleAddRoom = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const token = Cookies.get("token");
     const newRoom = {
       SoPhong: String(formData.get("number") || ""),
       DayPhong: String(formData.get("building") || ""),
@@ -937,22 +965,91 @@ const RoomsPage: FunctionComponent = () => {
       });
 
       const mappedRooms = res.data.map((phong: any) => ({
-        id: phong._id || phong.id || Date.now().toString(),
+        id: String(phong.PhongID),
         number: phong.SoPhong,
         building: phong.DayPhong,
         area: Number(phong.DienTich?.replace(/[^\d.]/g, "") || 0),
-        price: phong.GiaPhong,
-        status: "available" as "available",
+        price: Number(phong.GiaPhong),
+        status: mapRoomStatus(phong.TrangThaiPhong),
         amenities: phong.TienIch || [],
         description: phong.MoTaPhong,
+        // Include API response fields
+        PhongID: phong.PhongID,
+        SoPhong: phong.SoPhong,
+        DayPhong: phong.DayPhong,
+        GiaPhong: phong.GiaPhong,
+        TrangThaiPhong: phong.TrangThaiPhong,
+        MoTaPhong: phong.MoTaPhong,
+        DienTich: phong.DienTich,
+        TienIch: phong.TienIch,
+        HopDongID: phong.HopDongID,
+        KhachHangID_id: phong.KhachHangID_id,
+        NgayBatDau: phong.NgayBatDau,
+        NgayKetThuc: phong.NgayKetThuc,
+        TrangThaiHopDong: phong.TrangThaiHopDong,
       }));
 
-      setRooms(mappedRooms);
-      const lastRoom = mappedRooms[mappedRooms.length - 1];
-      setLastAddedRoom({ building: lastRoom.building, number: lastRoom.number });
-      setIsAddDialogOpen(false);
-      setSelectedAmenities([]);
-      addNotification(`Đã thêm phòng ${lastRoom.building}-${lastRoom.number} thành công!`, "success");
+      // Lấy hợp đồng để merge thông tin
+      try {
+        const contractRes = await axios.get("https://all-oqry.onrender.com/api/hopdong", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const contracts = contractRes.data;
+
+        let mergedRooms = mappedRooms.map((room: Room) => {
+          const contract = contracts.find(
+            (c: any) =>
+              String(c.PhongID_id) === String(room.id) &&
+              c.TrangThaiHopDong === "HoatDong"
+          );
+          if (contract) {
+            return {
+              ...room,
+              status: "occupied",
+              tenant: contract.HoTenKhachHang || contract.TenKhachHang || "",
+              tenantPhone: contract.SoDienThoai || "",
+              contractStartDate: contract.NgayBatDau,
+              contractEndDate: contract.NgayKetThuc,
+            };
+          }
+          return room;
+        });
+
+        // Lấy danh sách phòng đã đặt cọc
+        try {
+          const bookedRes = await axios.get("https://all-oqry.onrender.com/api/phong/phongdaco", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          const booked = bookedRes.data.data.map((phong: any) => String(phong.PhongID));
+          
+          mergedRooms = mergedRooms.map((room: Room) =>
+            booked.includes(String(room.id)) && room.status !== "occupied"
+              ? { ...room, status: "booked" }
+              : room
+          );
+        } catch (bookedError) {
+          console.warn("Không thể lấy danh sách phòng đã đặt cọc:", bookedError);
+        }
+
+        setRooms(mergedRooms);
+        const lastRoom = mergedRooms[mergedRooms.length - 1];
+        setLastAddedRoom({ building: lastRoom.building, number: lastRoom.number });
+        setIsAddDialogOpen(false);
+        setSelectedAmenities([]);
+        addNotification(`Đã thêm phòng ${lastRoom.building}-${lastRoom.number} thành công!`, "success");
+      } catch (contractError) {
+        console.warn("Không thể lấy thông tin hợp đồng:", contractError);
+        setRooms(mappedRooms);
+        const lastRoom = mappedRooms[mappedRooms.length - 1];
+        setLastAddedRoom({ building: lastRoom.building, number: lastRoom.number });
+        setIsAddDialogOpen(false);
+        setSelectedAmenities([]);
+        addNotification(`Đã thêm phòng ${lastRoom.building}-${lastRoom.number} thành công!`, "success");
+      }
     } catch (error: any) {
       console.error("Lỗi thêm phòng:", error);
       addNotification("Lỗi khi thêm phòng!", "error");
@@ -1669,27 +1766,59 @@ const RoomsPage: FunctionComponent = () => {
     )
   }
 
-  const handleExtendContract = (contractId: string, months = 12) => {
+  const handleExtendContract = async (contractId: string, months = 12, paymentCycle = "1 tháng") => {
     const room = rooms.find((r) => r.id === contractId)
-    if (room) {
+    if (!room) return
+
+    const token = Cookies.get("token")
+    if (!token || token === "null" || token === "undefined") {
+      console.warn("Không có token → chuyển về /login")
+      router.replace("/login")
+      return
+    }
+
+    try {
       const currentEndDate = new Date(room.contractEndDate!)
       const newEndDate = new Date(currentEndDate.setMonth(currentEndDate.getMonth() + months))
 
-      setRooms((prevRooms) =>
-        prevRooms.map((r) =>
-          r.id === contractId
-            ? {
-              ...r,
-              contractEndDate: newEndDate.toISOString().split("T")[0],
-              notificationSent: false,
-            }
-            : r,
-        ),
+      const requestData = {
+        NgayKetThucMoi: newEndDate.toISOString().split("T")[0],
+        ChuKyMoi: paymentCycle,
+        ThoiHanMoi: `${months} tháng`
+      }
+
+      const response = await axios.put(
+        `https://all-oqry.onrender.com/api/hopdong/giahan/${room.HopDongID}`,
+        requestData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
       )
-      alert(
-        `Đã gia hạn hợp đồng phòng ${room.building}${room.number} thêm ${months} tháng đến ${newEndDate.toLocaleDateString("vi-VN")}`,
-      )
-      setIsContractDetailsOpen(false)
+
+      if (response.status === 200) {
+        // Cập nhật state local
+        setRooms((prevRooms) =>
+          prevRooms.map((r) =>
+            r.id === contractId
+              ? {
+                ...r,
+                contractEndDate: newEndDate.toISOString().split("T")[0],
+                notificationSent: false,
+              }
+              : r,
+          ),
+        )
+        
+        addNotification(`Đã gia hạn hợp đồng phòng ${room.building}${room.number} thêm ${months} tháng đến ${newEndDate.toLocaleDateString("vi-VN")}`, "success")
+        
+        setIsContractDetailsOpen(false)
+      }
+    } catch (error) {
+      console.error("Lỗi khi gia hạn hợp đồng:", error)
+      addNotification("Không thể gia hạn hợp đồng. Vui lòng thử lại.", "error")
     }
   }
 
@@ -1999,6 +2128,14 @@ const RoomsPage: FunctionComponent = () => {
       setContractDetailId(null);
     }
   };
+//kết hợp với xem thông báo khi hợp đồng hết hạn
+  // Hàm xử lý xem chi tiết hợp đồng từ notification
+  const handleViewContractDetailsFromNotification = (contractId: string) => {
+    const room = rooms.find((r) => r.id === contractId);
+    if (room) {
+      handleViewContractDetails(room);
+    }
+  };
 
   // Gọi API chi tiết hợp đồng khi contractDetailId thay đổi và dialog mở
   React.useEffect(() => {
@@ -2008,13 +2145,78 @@ const RoomsPage: FunctionComponent = () => {
       router.replace("/login");
       return;
     }
+    
+    // Gọi API lấy thông tin hợp đồng
     axios.get(`https://all-oqry.onrender.com/api/hopdong/chi-tiet/${contractDetailId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     })
-      .then((res) => {
-        setContractDetail(res.data);
+      .then(async (res) => {
+        const contractData = res.data;
+        
+                // Nếu có KhachHangID, gọi thêm API lấy thông tin khách hàng chi tiết
+        if (contractData.KhachHangID_id) {
+          try {
+            // Thử nhiều endpoint khác nhau
+            let customerData = null;
+            
+            // Thử endpoint 1 (đã comment)
+            // try {
+            //   const customerRes1 = await axios.get(`https://all-oqry.onrender.com/api/khachhang/chi-tiet/${contractData.KhachHangID_id}`, {
+            //     headers: { Authorization: `Bearer ${token}` },
+            //   });
+            //   customerData = customerRes1.data;
+            // } catch (error1) {
+            //   console.log("Endpoint 1 failed, trying endpoint 2...");
+            // }
+                
+            // Thử endpoint 2
+            try {
+              const customerRes2 = await axios.get(`https://all-oqry.onrender.com/api/khachhang/${contractData.KhachHangID_id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              customerData = customerRes2.data;
+            } catch (error2) {
+              console.log("Endpoint 2 failed, trying endpoint 3...");
+              
+              // Thử endpoint 3 - lấy tất cả khách hàng và tìm
+              try {
+                const allCustomersRes = await axios.get(`https://all-oqry.onrender.com/api/khachhang`, {
+                  headers: { Authorization: `Bearer ${token}` },
+                });
+                const customer = allCustomersRes.data.find((c: any) => c.KhachHangID === contractData.KhachHangID_id);
+                if (customer) {
+                  customerData = customer;
+                }
+              } catch (error3) {
+                console.log("All endpoints failed");
+              }
+            }
+            
+            if (customerData) {
+              // Merge thông tin khách hàng vào contract data
+              const mergedData = {
+                ...contractData,
+                ...customerData
+              };
+              
+              console.log("Contract Data:", contractData);
+              console.log("Customer Data:", customerData);
+              console.log("Merged Data:", mergedData);
+              
+              setContractDetail(mergedData);
+            } else {
+              console.warn("Không tìm thấy thông tin khách hàng");
+              setContractDetail(contractData);
+            }
+          } catch (customerError) {
+            console.warn("Không thể lấy thông tin khách hàng chi tiết:", customerError);
+            setContractDetail(contractData);
+          }
+        } else {
+          setContractDetail(contractData);
+        }
       })
       .catch(() => setContractDetail(null));
   }, [isContractDetailsOpen, contractDetailId]);
@@ -2238,6 +2440,7 @@ const RoomsPage: FunctionComponent = () => {
             onMarkNotified={handleMarkNotified}
             onExtendContract={handleExtendContract}
             onContactTenant={handleContactTenant}
+            onViewContractDetails={handleViewContractDetailsFromNotification}
           />
 
           {/* Search Bar */}
@@ -2335,7 +2538,7 @@ const RoomsPage: FunctionComponent = () => {
             </Button>
           </div>
 
-          {/* Add Room Button - Mobile */}
+          {/* Thêm phòng */}
           <div className="lg:hidden">
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
@@ -2773,10 +2976,10 @@ const RoomsPage: FunctionComponent = () => {
                           <FileText className="h-4 w-4" /> Thông tin hợp đồng
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                          <div>
+                          {/* <div>
                             <span className="font-medium">Số hợp đồng:</span>{' '}
                             {contractDetail.HopDongID || 'Không có'}
-                          </div>
+                          </div> */}
                           <div>
                             <span className="font-medium">Ngày tạo hợp đồng:</span>{' '}
                             {contractDetail.NgayTaoHopDong
@@ -2962,13 +3165,68 @@ const RoomsPage: FunctionComponent = () => {
                         Thông tin Bên B (Bên thuê)
                       </h3>
                       <div className="bg-yellow-50 p-4 rounded-lg space-y-2 text-sm">
-                        <div>
-                          <strong>Mã khách hàng:</strong> {contractDetail.KhachHangID_id || 'Không có'}
+                        {/* Thông tin cơ bản khách hàng */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          <div>
+                            <strong>Họ tên khách hàng:</strong> {contractDetail.HoTenKhachHang || contractDetail.TenKhachHang || 'Không có'}
+                          </div>
+                          <div>
+                            <strong>Ngày sinh:</strong> {contractDetail.NgaySinh ? new Date(contractDetail.NgaySinh).toLocaleDateString('vi-VN') : 'Không có'}
+                          </div>
+                          <div>
+                            <strong>Số điện thoại:</strong> {contractDetail.SoDienThoai || 'Không có'}
+                          </div>
+                          <div>
+                            <strong>Giới tính:</strong> {contractDetail.GioiTinh || 'Không có'}
+                          </div>
+                          <div>
+                            <strong>Công việc:</strong> {contractDetail.CongViec || 'Không có'}
+                          </div>
+                          <div>
+                            <strong>Số CCCD:</strong> {contractDetail.SoCCCD || contractDetail.CCCD || 'Không có'}
+                          </div>
+                          <div>
+                            <strong>Ngày cấp CCCD:</strong> {contractDetail.NgayCapCCCD ? new Date(contractDetail.NgayCapCCCD).toLocaleDateString('vi-VN') : 'Không có'}
+                          </div>
+                          <div>
+                            <strong>Nơi cấp CCCD:</strong> {contractDetail.NoiCapCCCD || contractDetail.NoiCap || 'Không có'}
+                          </div>
                         </div>
-                        <div>
-                          <strong>Mã phòng:</strong> {contractDetail.PhongID_id || 'Không có'}
+
+                        {/* Thông tin địa chỉ */}
+                        <div className="border-t pt-4 mb-4">
+                          <h4 className="font-medium text-gray-800 mb-2">Thông tin địa chỉ:</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <strong>Tỉnh/Thành phố:</strong> {contractDetail.TinhThanh || contractDetail.ThanhPho || 'Không có'}
+                            </div>
+                            <div>
+                              <strong>Quận/Huyện:</strong> {contractDetail.QuanHuyen || contractDetail.Quan || 'Không có'}
+                            </div>
+                            <div>
+                              <strong>Phường/Xã:</strong> {contractDetail.PhuongXa || contractDetail.Phuong || 'Không có'}
+                            </div>
+                            <div>
+                              <strong>Địa chỉ cụ thể:</strong> {contractDetail.DiaChiCuThe || contractDetail.DiaChiChiTiet || 'Không có'}
+                            </div>
+                          </div>
                         </div>
-                        <div>
+
+                        {/* Debug: Hiển thị tất cả dữ liệu có sẵn */}
+                        {/* {process.env.NODE_ENV === 'development' && (
+                          <div className="border-t pt-4 mb-4">
+                            <h4 className="font-medium text-gray-800 mb-2">Debug - Tất cả dữ liệu:</h4>
+                            <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto max-h-40">
+                              {JSON.stringify(contractDetail, null, 2)}
+                            </pre>
+                          </div>
+                        )} */}
+
+                        {/* Thông tin hợp đồng */}
+                        <div className="border-t pt-4">
+                          {/* <h4 className="font-medium text-gray-800 mb-2">Thông tin hợp đồng:</h4> */}
+                          {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> */}
+                          {/* <div>
                           <strong>Ngày bắt đầu:</strong> {contractDetail.NgayBatDau ? new Date(contractDetail.NgayBatDau).toLocaleDateString('vi-VN') : 'Không có'}
                         </div>
                         <div>
@@ -2991,12 +3249,14 @@ const RoomsPage: FunctionComponent = () => {
                         </div>
                         <div>
                           <strong>Thời hạn hợp đồng:</strong> {contractDetail.ThoiHanHopDong || 'Không có'}
-                        </div>
-                        <div>
+                        </div> */}
+                        {/* <div>
                           <strong>Ghi chú hợp đồng:</strong> {contractDetail.GhiChuHopDong || 'Không có'}
-                        </div>
-                        <div>
-                          <strong>Quản lý ID:</strong> {contractDetail.QuanLiID_id || 'Không có'}
+                        </div> */}
+                          {/* </div> */}
+                          {/* <div className="mt-4">
+                            <strong>Ghi chú hợp đồng:</strong> {contractDetail.GhiChuHopDong || 'Không có'}
+                          </div> */}
                         </div>
                       </div>
                     </div>
@@ -3319,55 +3579,91 @@ const RoomsPage: FunctionComponent = () => {
                     </div>
                   </div>
 
-                  {/* Extension Section - Show if contract is expired or expiring */}
+                  {/* Gia hạn*/}
                   {selectedRoom.contractEndDate &&
                     (() => {
                       const contractStatus = getContractStatus(selectedRoom.contractEndDate)
+                      const daysUntilExpiry = getDaysUntilExpiry(selectedRoom.contractEndDate)
+                      const canExtend = daysUntilExpiry <= 30 && daysUntilExpiry >= 0 // Cho phép gia hạn khi còn trong 30 ngày, bao gồm cả ngày hết hạn (0 ngày)
+                      
                       return (
-                        (contractStatus === "expired" || contractStatus === "expiring") && (
-                          <div className="space-y-2">
-                            <h3 className="text-sm lg:text-base font-medium text-gray-900 border-b pb-1">
-                              Gia hạn hợp đồng
-                            </h3>
-                            <div className="bg-orange-50 p-2 lg:p-4 rounded-lg space-y-3">
+                        <div className="space-y-2">
+                          <h3 className="text-sm lg:text-base font-medium text-gray-900 border-b pb-1">
+                            Gia hạn hợp đồng
+                          </h3>
+                          <div className="bg-orange-50 p-2 lg:p-4 rounded-lg space-y-3">
+
                               <div className="space-y-2">
-                                <Label htmlFor="extensionMonths" className="text-xs lg:text-sm font-medium">
-                                  Thời gian gia hạn:
+                                <Label htmlFor="extensionPaymentCycle" className="text-xs lg:text-sm font-medium">
+                                  Chu kỳ thu tiền:
                                 </Label>
                                 <Select
-                                  value={extensionMonths.toString()}
-                                  onValueChange={(value) => setExtensionMonths(Number(value))}
+                                  value={extensionPaymentCycle}
+                                  onValueChange={(value) => setExtensionPaymentCycle(value)}
                                 >
                                   <SelectTrigger className="h-8 lg:h-10 text-xs lg:text-sm">
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="3">3 tháng</SelectItem>
-                                    <SelectItem value="6">6 tháng</SelectItem>
-                                    <SelectItem value="12">12 tháng</SelectItem>
-                                    <SelectItem value="24">24 tháng</SelectItem>
+                                    <SelectItem value="1 tháng">1 tháng</SelectItem>
+                                    <SelectItem value="3 tháng">3 tháng</SelectItem>
+                                    <SelectItem value="6 tháng">6 tháng</SelectItem>
+                                    <SelectItem value="12 tháng">12 tháng</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
-                              <div className="text-xs bg-orange-100 p-2 rounded">
-                                <strong>Ngày kết thúc mới:</strong> {(() => {
-                                  const currentEndDate = new Date(selectedRoom.contractEndDate!)
-                                  const newEndDate = new Date(
-                                    currentEndDate.setMonth(currentEndDate.getMonth() + extensionMonths),
-                                  )
-                                  return newEndDate.toLocaleDateString("vi-VN")
-                                })()}
-                              </div>
-                              <Button
-                                onClick={() => handleExtendContract(selectedRoom.id, extensionMonths)}
-                                className="w-full h-9 lg:h-10 bg-orange-600 hover:bg-orange-700 text-xs lg:text-sm"
+                            <div className="space-y-2">
+                              <Label htmlFor="extensionMonths" className="text-xs lg:text-sm font-medium">
+                                Thời gian gia hạn:
+                              </Label>
+                              <Select
+                                value={extensionMonths.toString()}
+                                onValueChange={(value) => setExtensionMonths(Number(value))}
                               >
-                                <Calendar className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
-                                Gia hạn hợp đồng {extensionMonths} tháng
-                              </Button>
+                                <SelectTrigger className="h-8 lg:h-10 text-xs lg:text-sm">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="3">3 tháng</SelectItem>
+                                  <SelectItem value="6">6 tháng</SelectItem>
+                                  <SelectItem value="12">12 tháng</SelectItem>
+                                  <SelectItem value="24">24 tháng</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </div>
+                            <div className="text-xs bg-orange-100 p-2 rounded">
+                              <strong>Ngày kết thúc mới:</strong> {(() => {
+                                const currentEndDate = new Date(selectedRoom.contractEndDate!)
+                                const newEndDate = new Date(
+                                  currentEndDate.setMonth(currentEndDate.getMonth() + extensionMonths),
+                                )
+                                return newEndDate.toLocaleDateString("vi-VN")
+                              })()}
+                            </div>
+                            {!canExtend && daysUntilExpiry > 30 && (
+                              <div className="text-xs bg-blue-100 p-2 rounded text-blue-800">
+                                <strong>Thông báo:</strong> Nút gia hạn sẽ được kích hoạt khi còn 1 tháng trước khi hết hạn hợp đồng.
+                              </div>
+                            )}
+                            {daysUntilExpiry < 0 && (
+                              <div className="text-xs bg-red-100 p-2 rounded text-red-800">
+                                <strong>Lưu ý:</strong> Hợp đồng đã hết hạn. Vui lòng liên hệ khách thuê để gia hạn.
+                              </div>
+                            )}
+                            <Button
+                              onClick={() => handleExtendContract(selectedRoom.id, extensionMonths, extensionPaymentCycle)}
+                              disabled={!canExtend}
+                              className={`w-full h-9 lg:h-10 text-xs lg:text-sm ${
+                                canExtend 
+                                  ? "bg-orange-600 hover:bg-orange-700" 
+                                  : "bg-gray-400 cursor-not-allowed"
+                              }`}
+                            >
+                              <Calendar className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
+                              Gia hạn hợp đồng {extensionMonths} tháng
+                            </Button>
                           </div>
-                        )
+                        </div>
                       )
                     })()}
 
@@ -4468,3 +4764,4 @@ const RoomsPage: FunctionComponent = () => {
 }
 
 export default RoomsPage
+

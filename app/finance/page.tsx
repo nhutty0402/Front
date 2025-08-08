@@ -1,6 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import Cookies from "js-cookie"
+import axiosClient from "@/lib/axiosClient"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -18,25 +21,7 @@ import {
 } from "@/components/ui/dialog"
 import { Sidebar } from "@/components/sidebar"
 import { MobileSidebar } from "@/components/mobile-sidebar"
-import {
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  Receipt,
-  Plus,
-  Search,
-  Filter,
-  Download,
-  Eye,
-  Edit,
-  Trash2,
-  Menu,
-  AlertCircle,
-  X,
-  Calendar,
-  User,
-  Home,
-} from "lucide-react"
+import { DollarSign, TrendingUp, TrendingDown, Receipt, Plus, Search, Filter, Download, Eye, Edit, Trash2, Menu, AlertCircle, X, Calendar, User, Home } from "lucide-react"
 
 interface Transaction {
   id: string
@@ -51,73 +36,7 @@ interface Transaction {
   dueDate?: string
 }
 
-const mockTransactions: Transaction[] = [
-  {
-    id: "1",
-    type: "income",
-    category: "Tiền thuê phòng",
-    description: "Tiền thuê phòng A101 - Tháng 12/2024",
-    amount: 3000000,
-    date: "2024-12-01",
-    roomNumber: "A101",
-    tenant: "Nguyễn Văn A",
-    status: "completed",
-  },
-  {
-    id: "2",
-    type: "income",
-    category: "Tiền điện nước",
-    description: "Tiền điện nước A101 - Tháng 12/2024",
-    amount: 235000,
-    date: "2024-12-01",
-    roomNumber: "A101",
-    tenant: "Nguyễn Văn A",
-    status: "completed",
-  },
-  {
-    id: "3",
-    type: "income",
-    category: "Tiền thuê phòng",
-    description: "Tiền thuê phòng B201 - Tháng 12/2024",
-    amount: 3200000,
-    date: "2024-12-05",
-    roomNumber: "B201",
-    tenant: "Trần Thị B",
-    status: "pending",
-    dueDate: "2024-12-05",
-  },
-  {
-    id: "4",
-    type: "expense",
-    category: "Bảo trì",
-    description: "Sửa chữa điều hòa phòng C202",
-    amount: 500000,
-    date: "2024-12-03",
-    roomNumber: "C202",
-    status: "completed",
-  },
-  {
-    id: "5",
-    type: "expense",
-    category: "Tiện ích",
-    description: "Tiền điện chung khu vực",
-    amount: 800000,
-    date: "2024-12-02",
-    status: "completed",
-  },
-  {
-    id: "6",
-    type: "income",
-    category: "Tiền thuê phòng",
-    description: "Tiền thuê phòng A103 - Tháng 12/2024",
-    amount: 2900000,
-    date: "2024-11-25",
-    roomNumber: "A103",
-    tenant: "Lê Văn C",
-    status: "overdue",
-    dueDate: "2024-12-01",
-  },
-]
+// Xóa dữ liệu mẫu – hiển thị 100% dữ liệu từ API
 
 const categories = {
   income: ["Tiền thuê phòng", "Tiền điện nước", "Tiền dịch vụ", "Tiền cọc", "Khác"],
@@ -137,7 +56,7 @@ const statusLabels = {
 }
 
 export default function FinancePage() {
-  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions)
+  const [transactions, setTransactions] = useState<Transaction[]>([])
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [filterType, setFilterType] = useState<string>("all")
   const [filterStatus, setFilterStatus] = useState<string>("all")
@@ -145,7 +64,72 @@ export default function FinancePage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
-  const [selectedMonth, setSelectedMonth] = useState("2024-12")
+  const [selectedMonth, setSelectedMonth] = useState("all")
+  const router = useRouter()
+
+  // Fetch invoices from API and map to Transaction[]
+  useEffect(() => {
+    const token = Cookies.get("token")
+    console.log("Token từ cookie:", token)
+    if (!token || token === "null" || token === "undefined") {
+      console.warn("Không có token → chuyển về /login")
+      router.replace("/login")
+      return
+    }
+
+    const normalizeMonth = (thangNam: string | null | undefined): string => {
+      if (!thangNam) return new Date().toISOString().slice(0, 7)
+      if (/^\d{4}-\d{2}$/.test(thangNam)) return thangNam
+      if (/^\d{2}\/\d{4}$/.test(thangNam)) {
+        const [mm, yyyy] = thangNam.split("/")
+        return `${yyyy}-${String(mm).padStart(2, "0")}`
+      }
+      return new Date().toISOString().slice(0, 7)
+    }
+
+    const fetchInvoices = async () => {
+      try {
+        const res = await axiosClient.get("https://all-oqry.onrender.com/api/hoadon/hoadon", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const list: any[] = Array.isArray(res.data) ? res.data : res.data?.data || []
+
+        const mapped: Transaction[] = list.map((item: any, idx: number) => {
+          const monthStr = normalizeMonth(item.ThangNam)
+          const firstDay = `${monthStr}-01`
+          const amount = Number.parseFloat(item.TongTien ?? item.TienPhong ?? 0)
+          const itemMonthDate = new Date(firstDay)
+          const startOfCurrentMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+
+          let status: Transaction["status"]
+          if (String(item.TrangThaiThanhToan) === "0") {
+            status = "completed"
+          } else {
+            status = itemMonthDate < startOfCurrentMonth ? "overdue" : "pending"
+          }
+
+          return {
+            id: `${item.ChiSoID ?? idx}-${idx}`,
+            type: "income",
+            category: "Hóa đơn",
+            description: `Hóa đơn phòng ${String(item.DayPhong ?? "")}${String(item.SoPhong ?? "")} - Tháng ${new Date(firstDay).toLocaleDateString("vi-VN", { month: "2-digit", year: "numeric" })}`,
+            amount: Number.isFinite(amount) ? amount : 0,
+            date: firstDay,
+            roomNumber: `${String(item.DayPhong ?? "")}${String(item.SoPhong ?? "")}` || undefined,
+            tenant: item.HoTenKhachHang || undefined,
+            status,
+            dueDate: undefined,
+          }
+        })
+
+        setTransactions(mapped)
+      } catch (error) {
+        console.error("Lỗi khi gọi API hoadon:", error)
+      }
+    }
+
+    fetchInvoices()
+  }, [router])
 
   const filteredTransactions = transactions.filter((transaction) => {
     const matchesType = filterType === "all" || transaction.type === filterType
@@ -155,7 +139,7 @@ export default function FinancePage() {
       transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       transaction.tenant?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       transaction.roomNumber?.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesMonth = transaction.date.startsWith(selectedMonth)
+    const matchesMonth = selectedMonth === "all" || transaction.date.startsWith(selectedMonth)
 
     return matchesType && matchesStatus && matchesCategory && matchesSearch && matchesMonth
   })
@@ -358,15 +342,16 @@ export default function FinancePage() {
           {/* Month Selector - Mobile Optimized */}
           <Card className="p-3 lg:p-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-gray-500" />
                 <span className="text-sm font-medium">Tháng</span>
               </div>
-              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                 <SelectTrigger className="w-auto min-w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
                   <SelectItem value="2024-12">12/2024</SelectItem>
                   <SelectItem value="2024-11">11/2024</SelectItem>
                   <SelectItem value="2024-10">10/2024</SelectItem>

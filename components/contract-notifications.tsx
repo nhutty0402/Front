@@ -23,8 +23,9 @@ interface ContractNotification {
 interface ContractNotificationsProps {
   contracts: ContractNotification[]
   onMarkNotified: (contractId: string) => void
-  onExtendContract: (contractId: string) => void
+  onExtendContract: (contractId: string, months?: number, paymentCycle?: string) => void
   onContactTenant: (contractId: string, method: "phone" | "email") => void
+  onViewContractDetails: (contractId: string) => void
 }
 
 export function ContractNotifications({
@@ -32,6 +33,7 @@ export function ContractNotifications({
   onMarkNotified,
   onExtendContract,
   onContactTenant,
+  onViewContractDetails,
 }: ContractNotificationsProps) {
   const [showNotifications, setShowNotifications] = useState(true)
   const [filter, setFilter] = useState<"all" | "expired" | "expiring">("all")
@@ -235,25 +237,25 @@ export function ContractNotifications({
                           </Button>
                         )}
 
-                        {/* Contract Actions */}
-                        <Button
+                        {/* Thông báo khi hết hạn */}
+                        {/* <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => onExtendContract(contract.id)}
+                                                      onClick={() => onExtendContract(contract.id, 12, "1 tháng")}
                           className="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
                         >
                           <Calendar className="h-3 w-3 mr-1" />
                           Gia hạn
-                        </Button>
+                        </Button> */}
 
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(`/contracts/${contract.id}`, "_blank")}
+                          onClick={() => onViewContractDetails(contract.id)}
                           className="text-xs"
                         >
                           <FileText className="h-3 w-3 mr-1" />
-                          Xem HĐ
+                          Xem hợp đồng
                         </Button>
 
                         {/* Mark as Notified */}

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import axios from "axios"
+import axiosClient from "@/lib/axiosClient"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -26,6 +27,7 @@ interface Tenant {
   id: string
   name: string
   phone: string
+  email?: string
   idCard: string
   address: string
   room: string
@@ -36,6 +38,11 @@ interface Tenant {
   hasAccount: boolean
   username?: string
   password?: string
+  KhachHangID: number,
+  TaiKhoanID: number
+  TrangThai: string
+  MatKhau: string
+  Email: string
 }
 
 interface TenantDetail extends Tenant {
@@ -74,11 +81,11 @@ export default function TenantDetailPage({ params }: { params: { id: string } })
 
     const fetchLandlordInfo = async () => {
       try {
-        const res = await fetch("https://all-oqry.onrender.com/api/quanli/thong-tin", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
+          const res = await fetch("https://all-oqry.onrender.com/api/quanli/thong-tin", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
 
         if (!res.ok) throw new Error("Lỗi xác thực")
         const data = await res.json()
@@ -145,14 +152,11 @@ export default function TenantDetailPage({ params }: { params: { id: string } })
   
       try {
         // ✅ Gọi API khách hàng với token
-        const tenantsRes = await axios.get("https://all-oqry.onrender.com/api/khachhang", {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
+        const tenantsRes = await axiosClient.get("https://all-oqry.onrender.com/api/khachhang");
   
         const tenantsData = tenantsRes.data.map((found: any) => ({
           id: found._id || found.KhachHangID?.toString() || "",
+          KhachHangID: found.KhachHangID, // ✅ thêm dòng này
           name: found.HoTenKhachHang,
           phone: found.SoDienThoai,
           email: found.EmailTaiKhoan || "",
@@ -168,6 +172,10 @@ export default function TenantDetailPage({ params }: { params: { id: string } })
           rentAmount: parseFloat(found.GiaPhong) || 0,
           contractNumber: found.SoHopDong || "N/A",
           contractEndDate: found.NgayKetThuc || new Date().toISOString(),
+          TaiKhoanID: found.TaiKhoanID || 0,
+          TrangThai: found.TrangThai || "HoatDong",
+          MatKhau: found.MatKhau || "",
+          Email: found.Email || "",
           paymentHistory: [],
           requests: [],
         }));
@@ -175,11 +183,7 @@ export default function TenantDetailPage({ params }: { params: { id: string } })
         setTenants(tenantsData);
   
         // ✅ Gọi API tài khoản với token
-        const accountsRes = await axios.get("https://all-oqry.onrender.com/api/taikhoan", {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
+        const accountsRes = await axiosClient.get("https://all-oqry.onrender.com/api/taikhoan");
   
         setAccounts(accountsRes.data);
   
@@ -215,29 +219,30 @@ export default function TenantDetailPage({ params }: { params: { id: string } })
 
   const handleAddTenant = (formData: FormData) => {
     const createAccount = formData.get("createAccount") === "on"
+// lỗi chưa biết lỗi newTenant==============================================================================================================================
 
-    const newTenant: Tenant = {
-      id: Date.now().toString(),
-      name: formData.get("name") as string,
-      phone: formData.get("phone") as string,
-      idCard: formData.get("idCard") as string,
-      address: formData.get("address") as string,
-      room: formData.get("room") as string,
-      building: formData.get("building") as string,
-      startDate: formData.get("startDate") as string,
-      status: "active",
-      deposit: Number(formData.get("deposit")),
-      hasAccount: createAccount,
-      username: createAccount ? formData.get("name")?.toString().toLowerCase().replace(/\s+/g, "") : undefined,
-      password: createAccount ? "123456" : undefined,
-    }
+    // const newTenant: Tenant = {
+    //   id: Date.now().toString(),
+    //   name: formData.get("name") as string,
+    //   phone: formData.get("phone") as string,
+    //   idCard: formData.get("idCard") as string,
+    //   address: formData.get("address") as string,
+    //   room: formData.get("room") as string,
+    //   building: formData.get("building") as string,
+    //   startDate: formData.get("startDate") as string,
+    //   status: "active",
+    //   deposit: Number(formData.get("deposit")),
+    //   hasAccount: createAccount,
+    //   username: createAccount ? formData.get("name")?.toString().toLowerCase().replace(/\s+/g, "") : undefined,
+    //   password: createAccount ? "123456" : undefined,
+    // }
 
-    setTenants((prev) => [...prev, newTenant])
-    setIsAddDialogOpen(false)
+    // setTenants((prev) => [...prev, newTenant])
+    // setIsAddDialogOpen(false)
 
-    if (createAccount) {
-      alert(`Khách thuê và tài khoản đã được tạo!\nTên đăng nhập: ${newTenant.username}\nMật khẩu: 123456`)
-    }
+    // if (createAccount) {
+    //   alert(`Khách thuê và tài khoản đã được tạo!\nTên đăng nhập: ${newTenant.username}\nMật khẩu: 123456`)
+    // }
   }
 
   const handleDeleteTenant = (id: string) => {
@@ -437,7 +442,7 @@ export default function TenantDetailPage({ params }: { params: { id: string } })
 
 
 
-          {/* Tenants Grid */}
+          {/* Tài khoản*/}
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
             {filteredTenants.map((tenant) => (
               <Card key={tenant.id} className="hover:shadow-lg transition-shadow">
@@ -507,7 +512,7 @@ export default function TenantDetailPage({ params }: { params: { id: string } })
               Sửa
             </Button> */}
 
-                      {!tenant.hasAccount && (
+                      {!tenant.hasAccount ? (
                         <Button
                           variant="outline"
                           size="sm"
@@ -520,6 +525,21 @@ export default function TenantDetailPage({ params }: { params: { id: string } })
                           <UserPlus className="h-3 w-3 mr-1" />
                           Tạo tài khoản
                         </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="bg-green-50 text-green-600 hover:bg-green-100 border-green-200 text-xs"
+                          onClick={() => {
+                            const params = new URLSearchParams({
+                              id: String(tenant.TaiKhoanID || ""),
+                            })
+                            router.push(`/tenants/edit-account?${params.toString()}`)
+                          }}
+                        >
+                          <Edit className="h-3 w-3 mr-1" />
+                          Chỉnh sửa tài khoản
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -527,86 +547,87 @@ export default function TenantDetailPage({ params }: { params: { id: string } })
               </Card>
             ))}
           </div>
-
-
-
-          khách hàng đã có tài khoản
-          <h2 className="text-lg font-bold mt-10 mb-4">Khách hàng đã có tài khoản</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
-            {accounts.map((acc) => (
-              <Card key={acc.TaiKhoanID} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-lg truncate">{acc.HoTenKhachHang}</CardTitle>
-                      <CardDescription className="text-sm">
-                        {acc.TenDangNhap ? `Tài khoản: ${acc.TenDangNhap}` : "Chưa có tài khoản"}
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                      <span className="truncate">{acc.SoDienThoai}</span>
-                    </div>
-
-                    <div className="flex items-start gap-2 text-sm">
-                      <MapPin className="h-4 w-4 text-gray-500 flex-shrink-0 mt-0.5" />
-                      <span className="line-clamp-2">{acc.EmailTaiKhoan || "Không có email"}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                      <span>
-                        Ngày tạo:{" "}
-                        {acc.NgayTao
-                          ? new Date(acc.NgayTao).toLocaleDateString("vi-VN")
-                          : "Không rõ"}
-                      </span>
-                    </div>
-
-                    {/* Thêm Dãy và Phòng */}
-                    <div className="pt-2 border-t space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Dãy:</span>
-                        <span className="font-medium">{acc.ToaNha || "Chưa gán"}</span>
+          {/* Phần khách hàng đã có tài khoản - tạm thời ẩn */}
+          {false && (
+            <>
+              <h2 className="text-lg font-bold mt-10 mb-4">Khách hàng đã có tài khoản</h2>
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
+                {accounts.map((acc) => (
+                  <Card key={acc.TaiKhoanID} className="hover:shadow-lg transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-lg truncate">{acc.HoTenKhachHang}</CardTitle>
+                          <CardDescription className="text-sm">
+                            {acc.TenDangNhap ? `Tài khoản: ${acc.TenDangNhap}` : "Chưa có tài khoản"}
+                          </CardDescription>
+                        </div>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Phòng:</span>
-                        <span className="font-medium">{acc.Phong || "Chưa gán"}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Trạng thái:</span>
-                        <Badge
-                          className={`text-xs ${acc.TrangThai === "Hoạt động" ? "bg-emerald-400 text-white" : "bg-gray-400 text-white"
-                            }`}
-                        >
-                          {acc.TrangThai}
-                        </Badge>
-                      </div>
-                    </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Phone className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                          <span className="truncate">{acc.SoDienThoai}</span>
+                        </div>
 
-                    {/* Nút hành động */}
-                    <div className="flex gap-2 pt-3">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 bg-transparent text-xs"
-                        onClick={() => {
-                          alert(`Sửa tài khoản của ${acc.HoTenKhachHang}`)
-                        }}
-                      >
-                        <Edit className="h-3 w-3 mr-1" />
-                        Sửa
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                        <div className="flex items-start gap-2 text-sm">
+                          <MapPin className="h-4 w-4 text-gray-500 flex-shrink-0 mt-0.5" />
+                          <span className="line-clamp-2">{acc.EmailTaiKhoan || "Không có email"}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-sm">
+                          <Calendar className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                          <span>
+                            Ngày tạo:{" "}
+                            {acc.NgayTao
+                              ? new Date(acc.NgayTao).toLocaleDateString("vi-VN")
+                              : "Không rõ"}
+                          </span>
+                        </div>
+
+                        {/* Thêm Dãy và Phòng */}
+                        <div className="pt-2 border-t space-y-1">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Dãy:</span>
+                            <span className="font-medium">{acc.ToaNha || "Chưa gán"}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Phòng:</span>
+                            <span className="font-medium">{acc.Phong || "Chưa gán"}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Trạng thái:</span>
+                            <Badge
+                              className={`text-xs ${acc.TrangThai === "Hoạt động" ? "bg-emerald-400 text-white" : "bg-gray-400 text-white"
+                                }`}
+                            >
+                              {acc.TrangThai}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        {/* Nút hành động */}
+                        <div className="flex gap-2 pt-3">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 bg-transparent text-xs"
+                            onClick={() => {
+                              alert(`Sửa tài khoản của ${acc.HoTenKhachHang}`)
+                            }}
+                          >
+                            <Edit className="h-3 w-3 mr-1" />
+                            Sửa
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
 
           {filteredTenants.length === 0 && (
             <div className="text-center py-12">
@@ -620,104 +641,115 @@ export default function TenantDetailPage({ params }: { params: { id: string } })
 
       {/* Create Account Dialog */}
       <Dialog open={isCreateAccountDialogOpen} onOpenChange={setIsCreateAccountDialogOpen}>
-        <DialogContent className="sm:max-w-[400px] mx-4">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              const form = e.currentTarget
-              const username = form.username.value
-              const password = form.password.value
-              const confirmPassword = form.confirmPassword.value
+  <DialogContent className="sm:max-w-[400px] mx-4">
+    <form
+      onSubmit={async (e) => {
+        e.preventDefault()
+        const form = e.currentTarget
+        const username = form.username.value
+        const password = form.password.value
+        const confirmPassword = form.confirmPassword.value
+        const email = form.email.value
 
-              if (password !== confirmPassword) {
-                alert("Mật khẩu nhập lại không khớp!")
-                return
-              }
+        if (password !== confirmPassword) {
+          alert("Mật khẩu nhập lại không khớp!")
+          return
+        }
 
-              if (selectedTenant) {
-                setTenants(
-                  tenants.map((tenant) =>
-                    tenant.id === selectedTenant.id
-                      ? { ...tenant, hasAccount: true, username, password }
-                      : tenant,
-                  ),
-                )
+        if (!selectedTenant) return
 
-                setIsCreateAccountDialogOpen(false)
-                setSelectedTenant(null)
+        const token = Cookies.get("token")
+        if (!token || token === "null" || token === "undefined") {
+          router.replace("/login")
+          return
+        }
 
-                alert(`Tài khoản đã được tạo!\nTên đăng nhập: ${username}\nMật khẩu: ${password}`)
-              }
-            }}
-          >
-            <DialogHeader>
-              <DialogTitle>Tạo tài khoản cho khách thuê</DialogTitle>
-              <DialogDescription>Tạo tài khoản đăng nhập cho {selectedTenant?.name}</DialogDescription>
-            </DialogHeader>
+        try {
+          const payload = {
+            KhachHangID: selectedTenant.KhachHangID,
+            TenDangNhap: username,
+            Email: email,
+            MatKhau: password,
+            TrangThai: "HoatDong",
+          }       
+          const res = await axios.post("https://all-oqry.onrender.com/api/taikhoan/register", payload, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
 
-            <div className="grid gap-4 py-4">
+          if (res.status === 200 || res.status === 201) {
+            alert("Tạo tài khoản thành công!")
+            setTenants((prev) =>
+              prev.map((tenant) =>
+                tenant.id === selectedTenant.id
+                  ? { ...tenant, hasAccount: true, username, password }
+                  : tenant
+              )
+            )
+          } else {
+            alert("Không thể tạo tài khoản. Mã lỗi: " + res.status)
+          }
+        } catch (err: any) {
+          console.error("Lỗi tạo tài khoản:", err)
+          alert("Lỗi: " + (err.response?.data?.message || err.message))
+        }
 
-              {/* Dãy và Số phòng */}
-              <div className="space-y-2">
-                <Label>Dãy</Label>
-                <Input value={selectedTenant?.building || "Chưa gán"} disabled />
-              </div>
-              <div className="space-y-2">
-                <Label>Số phòng</Label>
-                <Input value={selectedTenant?.room || "Chưa gán"} disabled />
-              </div>
-              {/* Tên đăng nhập */}
-              <div className="space-y-2">
-                <Label htmlFor="username">Tên đăng nhập</Label>
-                <Input
-                  id="username"
-                  name="username"
-                  defaultValue={selectedTenant?.name.toLowerCase().replace(/\s+/g, "")}
-                  required
-                />
-              </div>
-              {/* Email */}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                />
-              </div>
+        setIsCreateAccountDialogOpen(false)
+        setSelectedTenant(null)
+      }}
+    >
+      <DialogHeader>
+        <DialogTitle>Tạo tài khoản cho khách thuê</DialogTitle>
+        <DialogDescription>
+          Tạo tài khoản đăng nhập cho {selectedTenant?.name}
+        </DialogDescription>
+      </DialogHeader>
 
-              {/* Số điện thoại */}
-              <div className="space-y-2">
-                <Label htmlFor="phone">Số điện thoại</Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  required
-                />
-              </div>
-              {/* Mật khẩu */}
-              <div className="space-y-2">
-                <Label htmlFor="password">Mật khẩu</Label>
-                <Input id="password" name="password" type="password" required />
-              </div>
+      <div className="grid gap-4 py-4">
+        <div className="space-y-2">
+          <Label>Dãy</Label>
+          <Input value={selectedTenant?.building || "Chưa gán"} disabled />
+        </div>
+        <div className="space-y-2">
+          <Label>Số phòng</Label>
+          <Input value={selectedTenant?.room || "Chưa gán"} disabled />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="username">Tên đăng nhập</Label>
+          <Input
+            id="username"
+            name="username"
+            defaultValue={selectedTenant?.name.toLowerCase().replace(/\s+/g, "")}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input id="email" name="email" type="email" required />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="phone">Số điện thoại</Label>
+          <Input id="phone" name="phone" type="tel" required disabled value={selectedTenant?.phone || ""} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="password">Mật khẩu</Label>
+          <Input id="password" name="password" type="password" required />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="confirmPassword">Nhập lại mật khẩu</Label>
+          <Input id="confirmPassword" name="confirmPassword" type="password" required />
+        </div>
+      </div>
 
-              {/* Nhập lại mật khẩu */}
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Nhập lại mật khẩu</Label>
-                <Input id="confirmPassword" name="confirmPassword" type="password" required />
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button type="submit" className="w-full">
-                Tạo tài khoản
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <DialogFooter>
+        <Button type="submit" className="w-full">
+          Tạo tài khoản
+        </Button>
+      </DialogFooter>
+    </form>
+  </DialogContent>
+</Dialog>
 
     </div>
   )
