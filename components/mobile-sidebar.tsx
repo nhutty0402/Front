@@ -26,7 +26,7 @@ const navigation = [
   { name: "Quản lý phòng", href: "/rooms", icon: Building2 },
   { name: "Quản lý khách hàng", href: "/tenants", icon: Users },
   { name: "Doanh thu", href: "/reports", icon: BarChart3 },
-  // { name: "Hợp đồng", href: "/contracts", icon: FileText },
+  { name: "Quản lý hợp đồng", href: "/contracts", icon: FileText },
   { name: "Quản lý hóa đơn", href: "/finance", icon: DollarSign },
   { name: "Dịch vụ", href: "/services", icon: Wrench },
   { name: "Cập nhật chỉ số", href: "/meter-readings", icon: Zap },

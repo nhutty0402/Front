@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
+import axiosClient from "@/lib/axiosClient"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -45,6 +46,14 @@ interface PriceSettings {
   water: number
 }
 
+interface TariffItem {
+  GiaID: number
+  LoaiDichVu: "Dien" | "Nuoc" | string
+  GiaCu: number
+  GiaMoi: number
+  NgayCapNhat: string
+}
+
 export default function MeterReadingsPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [selectedBuilding, setSelectedBuilding] = useState("all")
@@ -59,6 +68,14 @@ export default function MeterReadingsPage() {
   const [totalAmount, setTotalAmount] = useState(0)
   const [showPriceManager, setShowPriceManager] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  const [tariffHistory, setTariffHistory] = useState<TariffItem[]>([])
+  const [updateTariffForm, setUpdateTariffForm] = useState({
+    id: "1",
+    LoaiDichVu: "Dien",
+    GiaCu: "",
+    GiaMoi: "",
+    NgayCapNhat: new Date().toISOString().slice(0, 19),
+  })
 
   const [prices, setPrices] = useState<PriceSettings>({
     electric: 3500,
@@ -69,6 +86,9 @@ export default function MeterReadingsPage() {
     electric: "",
     water: "",
   })
+
+  // Track latest GiaID per service type to update the correct record
+  const [latestTariffIds, setLatestTariffIds] = useState<{ electric?: number; water?: number }>({})
 
   const [rooms] = useState<Room[]>([
     {
@@ -135,6 +155,46 @@ export default function MeterReadingsPage() {
     const now = new Date()
     const monthYear = `${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`
     setCurrentMonth(monthYear)
+  }, [])
+
+  // Fetch latest prices from dedicated endpoints
+  useEffect(() => {
+    const fetchLatest = async () => {
+      try {
+        const [dienRes, nuocRes] = await Promise.all([
+          axiosClient.get("https://all-oqry.onrender.com/api/giadiennuoc/dien"),
+          axiosClient.get("https://all-oqry.onrender.com/api/giadiennuoc/nuoc"),
+        ])
+        const latestElectric = (dienRes as any)?.data?.data ?? (dienRes as any)?.data
+        const latestWater = (nuocRes as any)?.data?.data ?? (nuocRes as any)?.data
+        setPrices((prev) => ({
+          ...prev,
+          electric: latestElectric?.GiaMoi ? Number(latestElectric.GiaMoi) : prev.electric,
+          water: latestWater?.GiaMoi ? Number(latestWater.GiaMoi) : prev.water,
+        }))
+        setLatestTariffIds({
+          electric: latestElectric?.GiaID,
+          water: latestWater?.GiaID,
+        })
+      } catch (e) {
+        // ignore
+      }
+    }
+    fetchLatest()
+  }, [])
+
+  // Fetch price history (đổ đủ dữ liệu từ /api/giadiennuoc)
+  useEffect(() => {
+    const fetchTariffs = async () => {
+      try {
+        const res = await axiosClient.get("https://all-oqry.onrender.com/api/giadiennuoc")
+        const list: TariffItem[] = Array.isArray(res.data) ? res.data : res.data?.data || []
+        setTariffHistory(list)
+      } catch (e) {
+        // ignore
+      }
+    }
+    fetchTariffs()
   }, [])
 
   // Calculate electric consumption and amount
@@ -257,18 +317,67 @@ export default function MeterReadingsPage() {
     setTimeout(() => setMessage(null), 5000)
   }
 
-  const handleUpdatePrice = (type: "electric" | "water") => {
+  const handleUpdatePrice = async (type: "electric" | "water") => {
     const newPrice = newPrices[type]
-    if (newPrice && !isNaN(Number(newPrice)) && Number(newPrice) > 0) {
+    if (!newPrice || isNaN(Number(newPrice)) || Number(newPrice) <= 0) {
+      setMessage({ type: "error", text: "Vui lòng nhập giá hợp lệ (lớn hơn 0)" })
+      setTimeout(() => setMessage(null), 3000)
+      return
+    }
+
+    try {
+      const loaiDichVu = type === "electric" ? "Dien" : "Nuoc"
+      const giaCu = type === "electric" ? prices.electric : prices.water
+      // Resolve correct GiaID to update
+      let targetGiaId = latestTariffIds[type]
+      if (!targetGiaId) {
+        try {
+          const res = await axiosClient.get(
+            type === "electric"
+              ? "https://all-oqry.onrender.com/api/giadiennuoc/dien"
+              : "https://all-oqry.onrender.com/api/giadiennuoc/nuoc"
+          )
+          const latest = (res as any)?.data?.data ?? (res as any)?.data
+          targetGiaId = latest?.GiaID
+          if (targetGiaId) {
+            setLatestTariffIds((prev) => ({ ...prev, [type]: targetGiaId }))
+          }
+        } catch {}
+      }
+      if (!targetGiaId) {
+        setMessage({ type: "error", text: "Không xác định được GiaID để cập nhật." })
+        setTimeout(() => setMessage(null), 3000)
+        return
+      }
+      const payload = {
+        LoaiDichVu: loaiDichVu,
+        GiaCu: Number(giaCu),
+        GiaMoi: Number(newPrice),
+        NgayCapNhat: new Date().toISOString().slice(0, 19),
+      }
+
+      await axiosClient.put(`https://all-oqry.onrender.com/api/giadiennuoc/${targetGiaId}`, payload)
+
+      // Update local price
       setPrices((prev) => ({ ...prev, [type]: Number(newPrice) }))
       setNewPrices((prev) => ({ ...prev, [type]: "" }))
+
+      // Refresh history list from server
+      try {
+        const res = await axiosClient.get("https://all-oqry.onrender.com/api/giadiennuoc")
+        const list: TariffItem[] = Array.isArray(res.data) ? res.data : res.data?.data || []
+        setTariffHistory(list)
+      } catch {}
+
       setMessage({
         type: "success",
-        text: `Cập nhật giá ${type === "electric" ? "điện" : "nước"} thành công: ${formatCurrency(Number(newPrice))}/${type === "electric" ? "kWh" : "m³"}`,
+        text: `Cập nhật giá ${type === "electric" ? "điện" : "nước"} thành công: ${formatCurrency(Number(newPrice))}/${
+          type === "electric" ? "kWh" : "m³"
+        }`,
       })
       setTimeout(() => setMessage(null), 3000)
-    } else {
-      setMessage({ type: "error", text: "Vui lòng nhập giá hợp lệ (lớn hơn 0)" })
+    } catch (err) {
+      setMessage({ type: "error", text: "Cập nhật giá thất bại. Vui lòng thử lại." })
       setTimeout(() => setMessage(null), 3000)
     }
   }
@@ -409,7 +518,7 @@ export default function MeterReadingsPage() {
           </div>
 
           {/* Update Form */}
-          <Card className="border-0 shadow-sm">
+          {/* <Card className="border-0 shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />
@@ -419,7 +528,6 @@ export default function MeterReadingsPage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Room Selection */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
                     <Label>Dãy phòng</Label>
@@ -457,11 +565,8 @@ export default function MeterReadingsPage() {
                     </select>
                   </div>
                 </div>
-
-                {/* Readings Input */}
                 {selectedRoomData && (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Electric Reading */}
                     <div className="p-4 bg-blue-50 rounded-lg space-y-3">
                       <div className="flex items-center gap-2">
                         <Zap className="h-5 w-5 text-blue-600" />
@@ -514,7 +619,6 @@ export default function MeterReadingsPage() {
                       )}
                     </div>
 
-                    {/* Water Reading */}
                     <div className="p-4 bg-cyan-50 rounded-lg space-y-3">
                       <div className="flex items-center gap-2">
                         <Droplets className="h-5 w-5 text-cyan-600" />
@@ -563,8 +667,6 @@ export default function MeterReadingsPage() {
                     </div>
                   </div>
                 )}
-
-                {/* Total Cost */}
                 {selectedRoomData && totalAmount > 0 && (
                   <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-green-200">
                     <div className="flex items-center justify-between">
@@ -579,78 +681,61 @@ export default function MeterReadingsPage() {
                     </div>
                   </div>
                 )}
-
-                <Button type="submit" className="w-full lg:w-auto" disabled={!selectedRoomData || totalAmount === 0}>
-                  <Save className="h-4 w-4 mr-2" />
-                  Cập nhật chỉ số {totalAmount > 0 && `(${formatCurrency(totalAmount)})`}
-                </Button>
               </form>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Reading History */}
           <Card className="border-0 shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <History className="h-4 w-4" />
-                Lịch sử chỉ số
+                Lịch sử giá điện nước
               </CardTitle>
+              <CardDescription>Chỉ hiển thị Giá cũ và Giá mới theo lần cập nhật</CardDescription>
             </CardHeader>
             <CardContent>
-              {roomReadings.length > 0 ? (
-                <div className="space-y-3">
-                  {roomReadings.map((reading) => (
-                    <div key={reading.id} className="p-4 bg-gray-50 rounded-lg">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h4 className="font-medium">Tháng {reading.month}</h4>
-                          <p className="text-sm text-gray-600">Cập nhật: {reading.date}</p>
-                        </div>
-                        <div className="text-right">
-                          <Badge variant={reading.status === "Đã thanh toán" ? "default" : "secondary"}>
-                            {reading.status}
-                          </Badge>
-                          <div className="text-lg font-bold text-green-600 mt-1">
-                            {formatCurrency(reading.totalAmount)}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        <div className="p-3 bg-blue-50 rounded">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Zap className="h-4 w-4 text-blue-600" />
-                            <span className="font-medium">Điện</span>
-                          </div>
-                          <p className="text-gray-600">
-                            Chỉ số: {reading.oldElectric} → {reading.newElectric}
-                          </p>
-                          <p className="font-medium">Tiêu thụ: {reading.electricConsumption} kWh</p>
-                          <p className="font-medium">Giá: {formatCurrency(reading.electricPrice)}/kWh</p>
-                          <p className="font-bold text-blue-600">
-                            Thành tiền: {formatCurrency(reading.electricAmount)}
-                          </p>
-                        </div>
-                        <div className="p-3 bg-cyan-50 rounded">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Droplets className="h-4 w-4 text-cyan-600" />
-                            <span className="font-medium">Nước</span>
-                          </div>
-                          <p className="text-gray-600">
-                            Chỉ số: {reading.oldWater} → {reading.newWater}
-                          </p>
-                          <p className="font-medium">Tiêu thụ: {reading.waterConsumption} m³</p>
-                          <p className="font-medium">Giá: {formatCurrency(reading.waterPrice)}/m³</p>
-                          <p className="font-bold text-cyan-600">Thành tiền: {formatCurrency(reading.waterAmount)}</p>
-                        </div>
-                      </div>
+              {tariffHistory.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-3 bg-blue-50 rounded">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Zap className="h-4 w-4 text-blue-600" />
+                      <span className="font-medium">Điện</span>
                     </div>
-                  ))}
+                    <div className="space-y-2 text-sm">
+                      {tariffHistory
+                        .filter((t) => String(t.LoaiDichVu).toLowerCase() === "dien")
+                        .sort((a, b) => new Date(b.NgayCapNhat).getTime() - new Date(a.NgayCapNhat).getTime())
+                        .map((t) => (
+                          <div key={`dien-${t.GiaID}`} className="p-2 bg-white rounded border">
+                            <div className="text-gray-600">Ngày: {new Date(t.NgayCapNhat).toLocaleString("vi-VN")}</div>
+                            <div className="font-medium">Giá cũ: {t.GiaCu.toLocaleString("vi-VN")} VNĐ/kWh</div>
+                            <div className="font-semibold text-blue-600">Giá mới: {t.GiaMoi.toLocaleString("vi-VN")} VNĐ/kWh</div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                  <div className="p-3 bg-cyan-50 rounded">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Droplets className="h-4 w-4 text-cyan-600" />
+                      <span className="font-medium">Nước</span>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      {tariffHistory
+                        .filter((t) => String(t.LoaiDichVu).toLowerCase() === "nuoc")
+                        .sort((a, b) => new Date(b.NgayCapNhat).getTime() - new Date(a.NgayCapNhat).getTime())
+                        .map((t) => (
+                          <div key={`nuoc-${t.GiaID}`} className="p-2 bg-white rounded border">
+                            <div className="text-gray-600">Ngày: {new Date(t.NgayCapNhat).toLocaleString("vi-VN")}</div>
+                            <div className="font-medium">Giá cũ: {t.GiaCu.toLocaleString("vi-VN")} VNĐ/m³</div>
+                            <div className="font-semibold text-cyan-700">Giá mới: {t.GiaMoi.toLocaleString("vi-VN")} VNĐ/m³</div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-500">
-                  {selectedRoom ? "Chưa có lịch sử chỉ số" : "Chọn phòng để xem lịch sử"}
-                </div>
+                <div className="text-center py-8 text-gray-500">Chưa có dữ liệu giá</div>
               )}
             </CardContent>
           </Card>

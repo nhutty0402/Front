@@ -134,7 +134,7 @@ export default function EditAccountPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Mật khẩu (để trống nếu không đổi)</Label>
+                <Label htmlFor="password">Mật khẩu </Label>
                 <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
 

@@ -665,13 +665,15 @@ export default function TenantDetailPage({ params }: { params: { id: string } })
         }
 
         try {
-          const payload = {
+          const payload: any = {
             KhachHangID: selectedTenant.KhachHangID,
             TenDangNhap: username,
-            Email: email,
             MatKhau: password,
             TrangThai: "HoatDong",
-          }       
+          }
+          if (email && email.trim() !== "") {
+            payload.Email = email.trim()
+          }
           const res = await axios.post("https://all-oqry.onrender.com/api/taikhoan/register", payload, {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -725,8 +727,8 @@ export default function TenantDetailPage({ params }: { params: { id: string } })
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" name="email" type="email" required />
+          <Label htmlFor="email">Email (không bắt buộc)</Label>
+          <Input id="email" name="email" type="email" />
         </div>
         <div className="space-y-2">
           <Label htmlFor="phone">Số điện thoại</Label>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import axiosClient from "@/lib/axiosClient"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -117,52 +118,7 @@ interface Contract {
   managerData?: Manager
 }
 
-const mockContracts: Contract[] = [
-  {
-    id: "1",
-    contractNumber: "HD001",
-    room: "A101",
-    building: "A",
-    tenant: "Nguyễn Văn A",
-    tenantPhone: "0901234567",
-    startDate: "2025-01-01",
-    endDate: "2025-12-31",
-    rentAmount: 3000000,
-    deposit: 6000000,
-    status: "active",
-    terms: `TRÁCH NHIỆM CỦA BÊN B (KHÁCH THUÊ):
-
-1. Thanh toán đầy đủ tiền theo đúng thỏa thuận.
-
-2. Bảo quản các trang thiết bị và tài sản vật chất của bên A trong thời gian thuê (làm hỏng phải sửa, mất phải đền).
-
-3. Không được tự ý sửa chữa, cải tạo cơ sở vật chất khi chưa được sự đồng ý của bên A.
-
-4. Luôn có ý thức giữ gìn vệ sinh trong và ngoài khu vực phòng trọ.
-
-5. Bên B phải chấp hành mọi quy định của pháp luật Nhà nước và quy định của địa phương.
-
-6. Nếu bên B cho khách ở qua đêm thì phải báo trước và được sự đồng ý của bên A, đồng thời phải chịu trách nhiệm về các hành vi vi phạm pháp luật của khách trong thời gian ở lại (nếu có).
-
-TRÁCH NHIỆM CHUNG:
-
-1. Hai bên phải tạo điều kiện thuận lợi cho nhau để thực hiện hợp đồng.
-
-2. Nếu một trong hai bên vi phạm hợp đồng trong thời gian hợp đồng vẫn còn hiệu lực thì bên còn lại có quyền đơn phương chấm dứt hợp đồng thuê nhà trọ. Ngoài ra, nếu hành vi vi phạm đó gây tổn thất cho bên bị vi phạm thì bên vi phạm sẽ phải bồi thường mọi thiệt hại gây ra.
-
-3. Trong trường hợp muốn chấm dứt hợp đồng trước thời hạn, cần phải báo trước cho bên kia ít nhất 30 ngày và hai bên phải có sự thống nhất với nhau.
-
-4. Kết thúc hợp đồng, Bên A phải trả lại đầy đủ tiền đặt cọc cho bên B.
-
-5. Bên nào vi phạm các điều khoản chung thì phải chịu trách nhiệm trước pháp luật.
-
-6. Hợp đồng này được lập thành 02 bản và có giá trị pháp lý như nhau, mỗi bên giữ một bản.`,
-    createdDate: "2024-12-20",
-    witnesses: "Trần Thị B",
-    emergencyContact: "Nguyễn Thị C",
-    emergencyPhone: "0912345678",
-  },
-]
+const mockContracts: Contract[] = []
 
 const statusColors = {
   active: "bg-green-500",
@@ -188,6 +144,7 @@ export default function ContractsPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [prefilledRoom, setPrefilledRoom] = useState("")
   const [prefilledBuilding, setPrefilledBuilding] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
 
   // Check URL params for prefilled room info
   useEffect(() => {
@@ -201,6 +158,48 @@ export default function ContractsPage() {
       setIsAddDialogOpen(true)
       window.history.replaceState({}, document.title, window.location.pathname)
     }
+  }, [])
+
+  // Fetch contracts from API
+  useEffect(() => {
+    const fetchContracts = async () => {
+      setIsLoading(true)
+      try {
+        const res = await axiosClient.get("https://all-oqry.onrender.com/api/hopdong")
+        const list = Array.isArray(res.data) ? res.data : res.data?.data || []
+        const mapped: Contract[] = list.map((c: any) => {
+          const hopDongId = c.HopDongID || c._id || c.id
+          const trangThai: string = c.TrangThaiHopDong || "HoatDong"
+          const statusMap: Record<string, Contract["status"]> = {
+            HoatDong: "active",
+            HetHan: "expired",
+            DaHuy: "terminated",
+          }
+          const status: Contract["status"] = statusMap[trangThai] || "pending"
+          return {
+            id: String(hopDongId ?? Math.random()),
+            contractNumber: String(c.SoHopDong || hopDongId || "HD" + Math.floor(Math.random() * 10000)),
+            room: String(c.SoPhong || c.Phong || c.PhongID_id || ""),
+            building: String(c.DayPhong || c.ToaNha || ""),
+            tenant: String(c.HoTenKhachHang || c.TenKhachHang || c.KhachHang || ""),
+            tenantPhone: String(c.SoDienThoai || ""),
+            startDate: String(c.NgayBatDau || new Date().toISOString().split("T")[0]),
+            endDate: String(c.NgayKetThuc || new Date().toISOString().split("T")[0]),
+            rentAmount: Number(c.GiaPhong || 0),
+            deposit: Number(c.TienDatCoc || 0),
+            status,
+            terms: mockContracts[0]?.terms || "",
+            createdDate: String(c.NgayTaoHopDong || c.NgayTao || new Date().toISOString().split("T")[0]),
+          }
+        })
+        setContracts(mapped)
+      } catch (e) {
+        setContracts([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchContracts()
   }, [])
 
   const filteredContracts = contracts.filter((contract) => {
@@ -359,16 +358,31 @@ export default function ContractsPage() {
     // Form will be pre-filled via default values in the Dialog
   }
 
-  const handleExtendContract = (contract: Contract) => {
-    const newEndDate = new Date(contract.endDate)
-    newEndDate.setMonth(newEndDate.getMonth() + 6)
-    const updatedContract = {
-      ...contract,
-      endDate: newEndDate.toISOString().split("T")[0],
-      status: "active" as const,
+  const handleExtendContract = async (contract: Contract) => {
+    try {
+      const months = 6
+      const currentEndDate = new Date(validateDate(contract.endDate))
+      const newEndDate = new Date(currentEndDate.setMonth(currentEndDate.getMonth() + months))
+
+      const requestData = {
+        NgayKetThucMoi: newEndDate.toISOString().split("T")[0],
+        ChuKyMoi: "1 tháng",
+        ThoiHanMoi: `${months} tháng`,
+      }
+
+      await axiosClient.put(`https://all-oqry.onrender.com/api/hopdong/giahan/${contract.id}`, requestData)
+
+      setContracts((prev) =>
+        prev.map((c) =>
+          c.id === contract.id
+            ? { ...c, endDate: newEndDate.toISOString().split("T")[0], status: "active" }
+            : c,
+        ),
+      )
+      alert("Hợp đồng đã được gia hạn!")
+    } catch (error) {
+      alert("Không thể gia hạn hợp đồng. Vui lòng thử lại.")
     }
-    setContracts(contracts.map((c) => (c.id === contract.id ? updatedContract : c)))
-    alert("Hợp đồng đã được gia hạn!")
   }
 
   const handleDeleteContract = (id: string) => {
@@ -377,8 +391,14 @@ export default function ContractsPage() {
     }
   }
 
-  const handleViewContract = (contract: Contract) => {
-    setSelectedContract(contract)
+  const handleViewContract = async (contract: Contract) => {
+    try {
+      const res = await axiosClient.get(`https://all-oqry.onrender.com/api/hopdong/chi-tiet/${contract.id}`)
+      const detail = (res as any)?.data?.data ?? res.data
+      setSelectedContract({ ...contract, contractAPI: detail })
+    } catch {
+      setSelectedContract(contract)
+    }
     setIsViewDialogOpen(true)
   }
 
@@ -571,10 +591,10 @@ export default function ContractsPage() {
 
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="w-full lg:w-auto">
+                {/* <Button className="w-full lg:w-auto">
                   <Plus className="h-4 w-4 mr-2" />
                   Tạo hợp đồng mới
-                </Button>
+                </Button> */}
               </DialogTrigger>
               <DialogContent className="sm:max-w-[800px] mx-4 max-h-[90vh] overflow-y-auto">
                 <form action={handleAddContract}>
@@ -884,7 +904,7 @@ export default function ContractsPage() {
                         <p className="text-sm font-bold">{contract.rentAmount.toLocaleString()}₫/tháng</p>
                         <p className="text-xs text-gray-500">Cọc: {contract.deposit.toLocaleString()}₫</p>
                       </div>
-                      <div>
+                       <div>
                         <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Ngày tạo</p>
                         <p className="text-sm">{new Date(validateDate(contract.createdDate)).toLocaleDateString("vi-VN")}</p>
                         {contract.witnesses && (
@@ -892,7 +912,7 @@ export default function ContractsPage() {
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-2 pt-2">
+                     <div className="flex gap-2 pt-2">
                       <Button
                         variant="outline"
                         size="sm"
@@ -928,6 +948,10 @@ export default function ContractsPage() {
               )
             })}
           </div>
+
+            {isLoading && (
+              <div className="text-center py-8 text-gray-500">Đang tải hợp đồng...</div>
+            )}
 
           {filteredContracts.length === 0 && (
             <div className="text-center py-12">
