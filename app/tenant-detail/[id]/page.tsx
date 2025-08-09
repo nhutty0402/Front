@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 "use client"
 
 import { useState } from "react"
@@ -109,7 +110,7 @@ const mockTenantDetail: TenantDetail = {
   ],
 }
 
-export default function TenantDetailPage({ params }: { params: { id: string } }) {
+function TenantDetailPage({ params }: { params: { id: string } }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const router = useRouter()
   const tenant = mockTenantDetail // In real app, fetch by params.id
@@ -361,4 +362,13 @@ export default function TenantDetailPage({ params }: { params: { id: string } })
       </main>
     </div>
   )
+}
+
+
+export default function TenantDetailPageWrapper() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <TenantDetailPage />
+    </Suspense>
+  );
 }

@@ -1,29 +1,62 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Building2, Users, FileText, DollarSign, MessageSquare, Menu, TrendingUp, Bell } from "lucide-react"
 import { MobileSidebar } from "@/components/mobile-sidebar"
 import { Sidebar } from "@/components/sidebar"
+import axiosClient from "@/lib/axiosClient"
+
+interface DashboardStatsResponse {
+  totalRooms: number
+  rentedRooms: number
+  emptyRooms: number
+  tenants: number
+  activeContracts: number
+  expiringContracts: number
+  monthlyRevenue: string
+}
+
+const formatCurrency = (value: number) => {
+  if (!Number.isFinite(value)) return "-"
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(0)}M₫`
+  return `${value.toLocaleString("vi-VN")}₫`
+}
 
 export default function Dashboard() {
   const [userRole, setUserRole] = useState<"admin" | "tenant">("admin")
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [dashboardStats, setDashboardStats] = useState<DashboardStatsResponse | null>(null)
+
+  useEffect(() => {
+    const BASE_URL = "https://all-oqry.onrender.com"
+    ;(async () => {
+      try {
+        const { data } = await axiosClient.get<DashboardStatsResponse>(`${BASE_URL}/api/doanhthu/DashboardStats`)
+        setDashboardStats(data)
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error("Failed to load dashboard stats", error)
+      }
+    })()
+  }, [])
 
   const stats = [
     {
       title: "Tổng số phòng",
-      value: "24",
-      description: "20 đã thuê, 4 trống",
+      value: dashboardStats ? String(dashboardStats.totalRooms) : "-",
+      description: dashboardStats
+        ? `${dashboardStats.rentedRooms} đã thuê, ${dashboardStats.emptyRooms} trống`
+        : "",
       icon: Building2,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
     },
     {
       title: "Khách thuê",
-      value: "20",
+      value: dashboardStats ? String(dashboardStats.tenants) : "-",
       description: "Đang hoạt động",
       icon: Users,
       color: "text-green-600",
@@ -31,28 +64,28 @@ export default function Dashboard() {
     },
     {
       title: "Hợp đồng",
-      value: "18",
-      description: "2 sắp hết hạn",
+      value: dashboardStats ? String(dashboardStats.activeContracts) : "-",
+      description: dashboardStats ? `${dashboardStats.expiringContracts} sắp hết hạn` : "",
       icon: FileText,
       color: "text-orange-600",
       bgColor: "bg-orange-50",
     },
     {
       title: "Doanh thu tháng",
-      value: "72M₫",
-      description: "+12% so với tháng trước",
+      value: dashboardStats ? formatCurrency(parseFloat(dashboardStats.monthlyRevenue)) : "-",
+      description: "",
       icon: DollarSign,
       color: "text-purple-600",
       bgColor: "bg-purple-50",
     },
   ]
 
-  const recentActivities = [
-    { id: 1, type: "payment", message: "Nguyễn Văn A đã thanh toán hóa đơn phòng P101", time: "2 giờ trước" },
-    { id: 2, type: "request", message: "Yêu cầu sửa máy lạnh từ phòng P205", time: "4 giờ trước" },
-    { id: 3, type: "contract", message: "Hợp đồng phòng P103 sắp hết hạn", time: "1 ngày trước" },
-    { id: 4, type: "new_tenant", message: "Khách thuê mới đăng ký phòng P108", time: "2 ngày trước" },
-  ]
+  // const recentActivities = [
+  //   { id: 1, type: "payment", message: "Nguyễn Văn A đã thanh toán hóa đơn phòng P101", time: "2 giờ trước" },
+  //   { id: 2, type: "request", message: "Yêu cầu sửa máy lạnh từ phòng P205", time: "4 giờ trước" },
+  //   { id: 3, type: "contract", message: "Hợp đồng phòng P103 sắp hết hạn", time: "1 ngày trước" },
+  //   { id: 4, type: "new_tenant", message: "Khách thuê mới đăng ký phòng P108", time: "2 ngày trước" },
+  // ]
 
   const quickActions = [
     { title: "Thêm phòng", icon: Building2, href: "/rooms", color: "bg-blue-500" },
@@ -150,8 +183,8 @@ export default function Dashboard() {
 
             {/* Recent Activities & Quick Actions */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Recent Activities */}
-              <Card className="border-0 shadow-sm">
+              {/* Recent Activities - commented out sample data */}
+              {/* <Card className="border-0 shadow-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base lg:text-lg">Hoạt động gần đây</CardTitle>
                   <CardDescription className="text-sm">Các sự kiện mới nhất trong hệ thống</CardDescription>
@@ -167,7 +200,7 @@ export default function Dashboard() {
                     </div>
                   ))}
                 </CardContent>
-              </Card>
+              </Card> */}
 
               {/* Quick Actions - Desktop */}
               <Card className="border-0 shadow-sm hidden lg:block">

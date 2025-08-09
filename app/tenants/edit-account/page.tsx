@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
@@ -11,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-export default function EditAccountPage() {
+function EditAccountPage() {
   const router = useRouter()
   const params = useSearchParams()
 
@@ -168,3 +169,12 @@ export default function EditAccountPage() {
 }
 
 
+
+
+export default function EditAccountPageWrapper() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <EditAccountPage />
+    </Suspense>
+  );
+}

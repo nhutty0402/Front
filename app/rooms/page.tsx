@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 "use client"; // 👈 Đảm bảo có dòng này trên cùng
 import Cookies from 'js-cookie'
 import React from "react"

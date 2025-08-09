@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 "use client"
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
@@ -16,7 +17,7 @@ const availableAmenities = [
   { id: "Nội thất cơ bản", name: "Nội thất cơ bản" },
 ];
 
-export default function EditRoomPage() {
+function EditRoomPage() {
   const router = useRouter();
   const params = useParams();
   const { id } = params;
@@ -134,3 +135,11 @@ export default function EditRoomPage() {
     </div>
   );
 } 
+
+export default function EditRoomPageWrapper() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <EditRoomPage />
+    </Suspense>
+  );
+}

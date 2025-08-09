@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 "use client"
 
 import { useEffect, useState, useCallback, useMemo } from "react"
@@ -63,7 +64,7 @@ const statusLabels = {
   overdue: "Quá hạn",
 }
 
-export default function FinancePage() {
+function FinancePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isTariffDialogOpen, setIsTariffDialogOpen] = useState(false)
@@ -1136,4 +1137,13 @@ export default function FinancePage() {
       </Dialog>
     </div>
   )
+}
+
+
+export default function FinancePageWrapper() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <FinancePage />
+    </Suspense>
+  );
 }

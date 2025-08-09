@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 "use client"
 import Cookies from "js-cookie"
 import { useState } from "react"
@@ -46,7 +47,7 @@ interface Service {
   GiaDichVu: number;
 }
 
-export default function ServicesPage() {
+function ServicesPage() {
   const [services, setServices] = useState<Service[]>([])
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [editingService, setEditingService] = useState<Service | null>(null)
@@ -457,4 +458,13 @@ export default function ServicesPage() {
       </Dialog>
     </div>
   )
+}
+
+
+export default function ServicesPageWrapper() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ServicesPage />
+    </Suspense>
+  );
 }

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 'use client';
 
 import axios from 'axios';
@@ -7,7 +8,7 @@ import { useNotification } from '@/hooks/use-notification';
 import Cookies from 'js-cookie';
 
 
-export default function LoginPage() {
+function LoginPage() {
   const router = useRouter();
   const { addNotification } = useNotification();
 
@@ -40,5 +41,14 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center">
       <LoginForm onSubmit={handleLogin} />
     </div>
+  );
+}
+
+
+export default function LoginPageWrapper() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginPage />
+    </Suspense>
   );
 }
