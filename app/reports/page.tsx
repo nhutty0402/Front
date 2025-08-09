@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -13,8 +13,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  LineChart,
-  Line,
   PieChart,
   Pie,
   Cell,
@@ -22,6 +20,7 @@ import {
 import { TrendingUp, TrendingDown, DollarSign, Users, Building2, Menu, Download, Filter } from "lucide-react"
 import { MobileSidebar } from "@/components/mobile-sidebar"
 import { Sidebar } from "@/components/sidebar"
+import axiosClient from "@/lib/axiosClient"
 
 // Định nghĩa interface cho dữ liệu pie chart
 interface PieDataEntry {
@@ -46,6 +45,20 @@ interface TooltipProps {
     color: string
   }>
   label?: string
+}
+
+// API types
+interface SummaryResponse {
+  tongDoanhThu: string
+  chiPhiVanHanh: string
+  tyLeLapDay: number
+  soKhachThue: number
+}
+
+interface ChartItemResponse {
+  thang: number
+  doanhThu: string
+  chiPhi: string
 }
 
 // Định dạng tiền tệ VNĐ
@@ -73,50 +86,75 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
   return null
 }
 
-// Hàm render label cho pie chart - FIX cho lỗi TypeScript
-const renderPieLabel = (entry: PieLabelProps) => {
-  return `${entry.name} ${(entry.percent * 100).toFixed(0)}%`
+// Hàm render label cho pie chart - an toàn kiểu dữ liệu
+const renderPieLabel = (entry: any) => {
+  const name: string = entry?.name ?? ""
+  const percent: number = entry?.percent ?? 0
+  return `${name} ${(percent * 100).toFixed(0)}%`
 }
 
 export default function ReportsPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [selectedPeriod, setSelectedPeriod] = useState("month")
+  // Bỏ bộ lọc theo tháng/quý/năm
 
-  // Dữ liệu mẫu - Doanh thu hàng tháng
-  const monthlyRevenue = [
-    { month: "T1", revenue: 78000000, expenses: 25000000 },
-    { month: "T2", revenue: 82000000, expenses: 28000000 },
-    { month: "T3", revenue: 75000000, expenses: 22000000 },
-    { month: "T4", revenue: 88000000, expenses: 30000000 },
-    { month: "T5", revenue: 92000000, expenses: 32000000 },
-    { month: "T6", revenue: 85000000, expenses: 28000000 },
-  ]
+  // State: API data
+  const [summary, setSummary] = useState<SummaryResponse | null>(null)
+  const [monthlyRevenue, setMonthlyRevenue] = useState<Array<{ month: string; revenue: number; expenses: number }>>([])
 
-  // Dữ liệu tỷ lệ lấp đầy
-  const occupancyData = [
-    { month: "T1", occupied: 85, vacant: 15 },
-    { month: "T2", occupied: 88, vacant: 12 },
-    { month: "T3", occupied: 82, vacant: 18 },
-    { month: "T4", occupied: 90, vacant: 10 },
-    { month: "T5", occupied: 95, vacant: 5 },
-    { month: "T6", occupied: 87, vacant: 13 },
-  ]
+  // Fetch data from API (năm 2025)
+  useEffect(() => {
+    const year = 2025
+    const baseUrl = "https://all-oqry.onrender.com"
+    ;(async () => {
+      try {
+        const [summaryRes, chartRes, detailRes] = await Promise.all([
+          axiosClient.get<SummaryResponse>(`${baseUrl}/api/doanhthu/tongquan`, { params: { nam: year } }),
+          axiosClient.get<ChartItemResponse[]>(`${baseUrl}/api/doanhthu/bieudo`, { params: { nam: year } }),
+          axiosClient.get(`${baseUrl}/api/doanhthu/chitietdoanhthu`, { params: { nam: year } }),
+        ])
 
-  // Dữ liệu doanh thu dịch vụ
-  const serviceRevenue: PieDataEntry[] = [
-    { name: "Tiền phòng", value: 62000000, color: "#3b82f6" },
-    { name: "Tiền điện", value: 12000000, color: "#ef4444" },
-    { name: "Tiền nước", value: 8000000, color: "#06b6d4" },
-    { name: "Internet", value: 3000000, color: "#8b5cf6" },
-    { name: "Dịch vụ khác", value: 3000000, color: "#f59e0b" },
-  ]
+        setSummary(summaryRes.data)
 
-  // Thống kê tổng quan
+        const mapped = (chartRes.data || []).map((item) => ({
+          month: `T${item.thang}`,
+          revenue: parseFloat(item.doanhThu || "0"),
+          expenses: parseFloat(item.chiPhi || "0"),
+        }))
+        setMonthlyRevenue(mapped)
+
+        const d = detailRes.data as {
+          tienPhong: string
+          tienDien: string
+          tienNuoc: string
+          internet: string
+          dichVuKhac: string
+          tienTru?: string
+        }
+        setServiceRevenue([
+          { name: "Tiền phòng", value: parseFloat(d?.tienPhong || "0"), color: "#3b82f6" },
+          { name: "Tiền điện", value: parseFloat(d?.tienDien || "0"), color: "#ef4444" },
+          { name: "Tiền nước", value: parseFloat(d?.tienNuoc || "0"), color: "#06b6d4" },
+          { name: "Internet", value: parseFloat(d?.internet || "0"), color: "#8b5cf6" },
+          { name: "Dịch vụ khác", value: parseFloat(d?.dichVuKhac || "0"), color: "#f59e0b" },
+        ])
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error("Failed to load reports data", error)
+      }
+    })()
+  }, [])
+
+  // Bỏ dữ liệu tỷ lệ lấp đầy
+
+  // Dữ liệu doanh thu dịch vụ từ API
+  const [serviceRevenue, setServiceRevenue] = useState<PieDataEntry[]>([])
+
+  // Thống kê tổng quan (từ API)
   const summaryStats = [
     {
       title: "Tổng doanh thu",
-      value: "78M VNĐ",
-      change: "+12.5%",
+      value: summary ? formatCurrency(parseFloat(summary.tongDoanhThu)) : "-",
+      change: undefined as string | undefined,
       trend: "up" as const,
       icon: DollarSign,
       color: "text-green-600",
@@ -124,8 +162,8 @@ export default function ReportsPage() {
     },
     {
       title: "Tỷ lệ lấp đầy",
-      value: "87%",
-      change: "+2.3%",
+      value: summary ? `${summary.tyLeLapDay}%` : "-",
+      change: undefined as string | undefined,
       trend: "up" as const,
       icon: Building2,
       color: "text-blue-600",
@@ -133,8 +171,8 @@ export default function ReportsPage() {
     },
     {
       title: "Số khách thuê",
-      value: "124",
-      change: "+5",
+      value: summary ? `${summary.soKhachThue}` : "-",
+      change: undefined as string | undefined,
       trend: "up" as const,
       icon: Users,
       color: "text-purple-600",
@@ -142,8 +180,8 @@ export default function ReportsPage() {
     },
     {
       title: "Chi phí vận hành",
-      value: "28M VNĐ",
-      change: "-3.2%",
+      value: summary ? formatCurrency(parseFloat(summary.chiPhiVanHanh)) : "-",
+      change: undefined as string | undefined,
       trend: "down" as const,
       icon: TrendingDown,
       color: "text-orange-600",
@@ -168,7 +206,7 @@ export default function ReportsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-lg font-semibold text-gray-900">Báo cáo</h1>
-              <p className="text-sm text-gray-500">Tháng 6/2024</p>
+              <p className="text-sm text-gray-500">Năm 2025</p>
             </div>
             <Button variant="ghost" size="sm" onClick={() => setIsMobileMenuOpen(true)}>
               <Menu className="h-5 w-5" />
@@ -183,7 +221,7 @@ export default function ReportsPage() {
               <h1 className="text-2xl font-bold text-gray-900">Báo cáo & Thống kê</h1>
               <p className="text-gray-600">Tổng quan tình hình kinh doanh nhà trọ</p>
             </div>
-            <div className="flex gap-2">
+            {/* <div className="flex gap-2">
               <Button variant="outline" size="sm">
                 <Filter className="h-4 w-4 mr-2" />
                 Bộ lọc
@@ -192,7 +230,7 @@ export default function ReportsPage() {
                 <Download className="h-4 w-4 mr-2" />
                 Xuất báo cáo
               </Button>
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -235,35 +273,12 @@ export default function ReportsPage() {
           {/* Phần biểu đồ */}
           <Tabs defaultValue="revenue" className="space-y-4">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <TabsList className="grid w-full lg:w-auto grid-cols-3">
+              <TabsList className="grid w-full lg:w-auto grid-cols-2">
                 <TabsTrigger value="revenue">Doanh thu</TabsTrigger>
-                <TabsTrigger value="occupancy">Tỷ lệ lấp đầy</TabsTrigger>
                 <TabsTrigger value="services">Dịch vụ</TabsTrigger>
               </TabsList>
 
-              <div className="flex gap-2">
-                <Button
-                  variant={selectedPeriod === "month" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedPeriod("month")}
-                >
-                  Theo tháng
-                </Button>
-                <Button
-                  variant={selectedPeriod === "quarter" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedPeriod("quarter")}
-                >
-                  Theo quý
-                </Button>
-                <Button
-                  variant={selectedPeriod === "year" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedPeriod("year")}
-                >
-                  Theo năm
-                </Button>
-              </div>
+              {/* Bỏ bộ lọc theo tháng/quý/năm - chỉ lọc theo năm 2025 */}
             </div>
 
             <TabsContent value="revenue" className="space-y-4">
@@ -289,39 +304,7 @@ export default function ReportsPage() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="occupancy" className="space-y-4">
-              <Card className="border-0 shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Biểu đồ Tỷ lệ lấp đầy phòng</CardTitle>
-                  <CardDescription>Theo dõi tỷ lệ phòng đã thuê và phòng trống theo thời gian</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-80 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={occupancyData} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" height={40} tick={{ fontSize: 12 }} />
-                        <YAxis width={60} tick={{ fontSize: 12 }} domain={[0, 100]} />
-                        <Tooltip
-                          formatter={(value: number, name: string) => [
-                            `${value}%`,
-                            name === "occupied" ? "Phòng đã thuê" : "Phòng trống",
-                          ]}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="occupied"
-                          stroke="#10b981"
-                          strokeWidth={3}
-                          name="Phòng đã thuê"
-                        />
-                        <Line type="monotone" dataKey="vacant" stroke="#f59e0b" strokeWidth={3} name="Phòng trống" />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+            {/* Đã xóa tab Tỷ lệ lấp đầy */}
 
             <TabsContent value="services" className="space-y-4">
               <Card className="border-0 shadow-sm">
@@ -378,7 +361,7 @@ export default function ReportsPage() {
           </Tabs>
 
           {/* Hoạt động gần đây */}
-          <Card className="border-0 shadow-sm">
+          {/* <Card className="border-0 shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Hoạt động gần đây</CardTitle>
               <CardDescription>Các giao dịch và sự kiện mới nhất trong hệ thống</CardDescription>
@@ -440,7 +423,7 @@ export default function ReportsPage() {
                 ))}
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </div>
     </div>

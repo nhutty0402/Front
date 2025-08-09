@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog"
 import { Sidebar } from "@/components/sidebar"
 import { MobileSidebar } from "@/components/mobile-sidebar"
+import axiosClient from "@/lib/axiosClient"
 import {
   MessageSquare,
   Clock,
@@ -41,6 +42,49 @@ import {
   MoreVertical,
 } from "lucide-react"
 
+// API types
+interface ApiLienHeItem {
+  LienHeID: number
+  LyDoLienHe: string
+  NoiDung: string
+  TrangThai: string
+  KhachHangID_id: number
+  PhongID_id: number
+  Time: string
+  HoTenKhachHang: string
+  SoDienThoai: string
+  SoPhong?: string
+}
+
+interface ApiKhachHangDetail {
+  KhachHangID: number
+  HoTenKhachHang: string
+  NgaySinh: string
+  GioiTinh: string
+  CongViec: string
+  TinhThanh: string
+  QuanHuyen: string
+  PhuongXa: string
+  DiaChiCuThe: string
+  SoCCCD: string
+  NgayCapCCCD: string
+  NoiCapCCCD: string
+  CCCDMT: string
+  CCCDMS: string
+  SoDienThoai: string
+}
+
+interface ApiPhongDetail {
+  PhongID: number
+  SoPhong: string
+  DayPhong: string
+  GiaPhong: string
+  TrangThaiPhong: string
+  MoTaPhong: string
+  DienTich: string
+  TienIch: string[]
+}
+
 interface Request {
   id: string
   type: "maintenance" | "complaint" | "service" | "other"
@@ -58,83 +102,11 @@ interface Request {
   estimatedCost?: number
   actualCost?: number
   notes?: string
+  customerDetail?: ApiKhachHangDetail
+  roomDetail?: ApiPhongDetail
 }
 
-const mockRequests: Request[] = [
-  {
-    id: "1",
-    type: "maintenance",
-    title: "Điều hòa không hoạt động",
-    description: "Điều hòa trong phòng không thể bật được, có thể do hỏng remote hoặc máy lạnh",
-    priority: "high",
-    status: "pending",
-    roomNumber: "A101",
-    tenantName: "Nguyễn Văn A",
-    tenantPhone: "0901234567",
-    tenantEmail: "nguyenvana@email.com",
-    createdDate: "2024-12-28",
-    estimatedCost: 500000,
-  },
-  {
-    id: "2",
-    type: "complaint",
-    title: "Tiếng ồn từ phòng bên cạnh",
-    description: "Phòng bên cạnh thường xuyên gây tiếng ồn vào ban đêm, ảnh hưởng đến giấc ngủ",
-    priority: "medium",
-    status: "in_progress",
-    roomNumber: "B201",
-    tenantName: "Trần Thị B",
-    tenantPhone: "0907654321",
-    createdDate: "2024-12-27",
-    updatedDate: "2024-12-28",
-    assignedTo: "Bảo vệ Minh",
-    notes: "Đã nhắc nhở phòng B202, theo dõi thêm",
-  },
-  {
-    id: "3",
-    type: "service",
-    title: "Yêu cầu thêm giường",
-    description: "Muốn thuê thêm một chiếc giường đơn cho phòng",
-    priority: "low",
-    status: "completed",
-    roomNumber: "C202",
-    tenantName: "Lê Văn C",
-    tenantPhone: "0903456789",
-    createdDate: "2024-12-25",
-    updatedDate: "2024-12-27",
-    assignedTo: "Kỹ thuật Hùng",
-    estimatedCost: 1500000,
-    actualCost: 1400000,
-    notes: "Đã lắp đặt giường mới, khách hàng hài lòng",
-  },
-  {
-    id: "4",
-    type: "maintenance",
-    title: "Rò rỉ nước từ vòi sen",
-    description: "Vòi sen trong phòng tắm bị rò rỉ nước liên tục",
-    priority: "urgent",
-    status: "pending",
-    roomNumber: "D301",
-    tenantName: "Phạm Thị D",
-    tenantPhone: "0909876543",
-    createdDate: "2024-12-28",
-    estimatedCost: 200000,
-  },
-  {
-    id: "5",
-    type: "other",
-    title: "Yêu cầu thay đổi khóa phòng",
-    description: "Muốn thay đổi khóa phòng vì lý do bảo mật cá nhân",
-    priority: "medium",
-    status: "rejected",
-    roomNumber: "A103",
-    tenantName: "Hoàng Văn E",
-    tenantPhone: "0905432167",
-    createdDate: "2024-12-26",
-    updatedDate: "2024-12-27",
-    notes: "Không đủ lý do chính đáng để thay khóa",
-  },
-]
+// Xóa dữ liệu mẫu - sẽ lấy từ API
 
 const requestTypes = {
   maintenance: { label: "Bảo trì", icon: Wrench, color: "bg-orange-100 text-orange-800 border-orange-200" },
@@ -172,7 +144,7 @@ const statusLabels = {
 }
 
 export default function RequestsPage() {
-  const [requests, setRequests] = useState<Request[]>(mockRequests)
+  const [requests, setRequests] = useState<Request[]>([])
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [filterType, setFilterType] = useState<string>("all")
   const [filterStatus, setFilterStatus] = useState<string>("all")
@@ -182,6 +154,67 @@ export default function RequestsPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null)
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
+
+  const BASE_URL = "https://all-oqry.onrender.com"
+
+  useEffect(() => {
+    const normalizeType = (reason: string): Request["type"] => {
+      const r = reason.toLowerCase()
+      if (r.includes("sự cố") || r.includes("hỏng") || r.includes("bảo trì")) return "maintenance"
+      if (r.includes("khiếu nại") || r.includes("phàn nàn")) return "complaint"
+      if (r.includes("dịch vụ") || r.includes("yêu cầu")) return "service"
+      return "other"
+    }
+
+    const normalizeStatus = (status: string): Request["status"] => {
+      const s = status.toLowerCase()
+      if (s.includes("đã xử lý") || s.includes("hoàn thành")) return "completed"
+      if (s.includes("đang xử lý")) return "in_progress"
+      if (s.includes("từ chối") || s.includes("reject")) return "rejected"
+      return "pending"
+    }
+
+    const fetchData = async () => {
+      try {
+        const { data } = await axiosClient.get<ApiLienHeItem[]>(`${BASE_URL}/api/lienhe`)
+        const items = Array.isArray(data) ? data : []
+
+        const mapped: Request[] = await Promise.all(
+          items.map(async (it) => {
+            const [customerRes, roomRes] = await Promise.all([
+              axiosClient.get<ApiKhachHangDetail>(`${BASE_URL}/api/khachhang/${it.KhachHangID_id}`),
+              axiosClient.get<ApiPhongDetail>(`${BASE_URL}/api/phong/${it.PhongID_id}`),
+            ])
+
+            const customer = customerRes.data
+            const room = roomRes.data
+
+            return {
+              id: String(it.LienHeID),
+              type: normalizeType(it.LyDoLienHe || ""),
+              title: it.LyDoLienHe,
+              description: it.NoiDung,
+              priority: "medium",
+              status: normalizeStatus(it.TrangThai || ""),
+              roomNumber: room?.SoPhong || it.SoPhong || "",
+              tenantName: it.HoTenKhachHang || customer?.HoTenKhachHang || "",
+              tenantPhone: it.SoDienThoai || customer?.SoDienThoai,
+              createdDate: new Date(it.Time).toISOString().split("T")[0],
+              customerDetail: customer,
+              roomDetail: room,
+            }
+          }),
+        )
+
+        setRequests(mapped)
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error("Failed to load requests from API", error)
+      }
+    }
+
+    fetchData()
+  }, [])
 
   const filteredRequests = requests.filter((request) => {
     const matchesType = filterType === "all" || request.type === filterType
@@ -224,10 +257,34 @@ export default function RequestsPage() {
   }
 
   const handleDeleteRequest = (id: string) => {
+    // Optimistic UI delete
+    const prev = requests
     setRequests(requests.filter((r) => r.id !== id))
+    axiosClient
+      .delete(`${BASE_URL}/api/lienhe/${id}`)
+      .catch((err) => {
+        // rollback
+        // eslint-disable-next-line no-console
+        console.error("Delete request failed", err)
+        setRequests(prev)
+      })
   }
 
-  const handleUpdateStatus = (id: string, status: Request["status"]) => {
+  const handleUpdateStatus = async (id: string, status: Request["status"]) => {
+    const statusToApi = (s: Request["status"]) => {
+      switch (s) {
+        case "completed":
+          return "Đã xử lý"
+        case "in_progress":
+          return "Đang xử lý"
+        case "rejected":
+          return "Từ chối"
+        default:
+          return "Chờ xử lý"
+      }
+    }
+
+    const prev = requests
     setRequests(
       requests.map((r) =>
         r.id === id
@@ -239,6 +296,17 @@ export default function RequestsPage() {
           : r,
       ),
     )
+
+    try {
+      await axiosClient.patch(`${BASE_URL}/api/lienhe/${id}/trangthai`, {
+        TrangThai: statusToApi(status),
+      })
+    } catch (err) {
+      // rollback
+      // eslint-disable-next-line no-console
+      console.error("Update status failed", err)
+      setRequests(prev)
+    }
   }
 
   const handleViewDetails = (request: Request) => {
@@ -650,9 +718,17 @@ export default function RequestsPage() {
                         )}
 
                         {/* More Actions */}
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreVertical className="h-3 w-3" />
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="h-8 px-2 text-xs"
+                          onClick={() => handleDeleteRequest(request.id)}
+                        >
+                          Xóa
                         </Button>
+                        {/* <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreVertical className="h-3 w-3" />
+                        </Button> */}
                       </div>
                     </div>
                   </div>
@@ -881,6 +957,27 @@ export default function RequestsPage() {
                       Hoàn thành
                     </Button>
                   )}
+                  {selectedRequest.status !== "in_progress" && selectedRequest.status !== "completed" && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        handleUpdateStatus(selectedRequest.id, "in_progress")
+                        setIsDetailDialogOpen(false)
+                      }}
+                      className="flex-1"
+                    >
+                      Đánh dấu đang xử lý
+                    </Button>
+                  )}
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      handleDeleteRequest(selectedRequest.id)
+                      setIsDetailDialogOpen(false)
+                    }}
+                  >
+                    Xóa yêu cầu
+                  </Button>
                   <Button variant="outline" onClick={() => setIsDetailDialogOpen(false)}>
                     Đóng
                   </Button>
