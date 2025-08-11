@@ -11,25 +11,24 @@ import {
   MessageSquare,
   BarChart3,
   Settings,
+  X,
   User,
   Wrench,
   Zap,
 } from "lucide-react"
 
 const navigation = [
+
   { name: "Trang chủ", href: "/", icon: Home },
   { name: "Quản lý phòng", href: "/rooms", icon: Building2 },
   { name: "Quản lý khách hàng", href: "/tenants", icon: Users },
   { name: "Doanh thu", href: "/reports", icon: BarChart3 },
-  // { name: "Hợp đồng", href: "/contracts", icon: FileText },
+  { name: "Quản lý hợp đồng", href: "/contracts", icon: FileText },
   { name: "Quản lý hóa đơn", href: "/finance", icon: DollarSign },
+  { name: "Lịch sử thanh toán", href: "/payment-history", icon: FileText },
   { name: "Dịch vụ", href: "/services", icon: Wrench },
   { name: "Cập nhật chỉ số", href: "/meter-readings", icon: Zap },
   { name: "Yêu cầu", href: "/requests", icon: MessageSquare },
-
-
-
-
 ]
 
 const secondaryNavigation = [

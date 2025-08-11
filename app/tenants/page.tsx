@@ -1,5 +1,5 @@
-import { Suspense } from "react";
 "use client"
+import { Suspense } from "react";
 import Cookies from "js-cookie"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -55,7 +55,7 @@ interface TenantDetail extends Tenant {
   requests: any[]
 }
 
-function TenantDetailPage({ params }: { params: { id: string } }) {
+function TenantDetailPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [tenant, setTenant] = useState<TenantDetail | null>(null)
   const [tenants, setTenants] = useState<Tenant[]>([])
@@ -758,6 +758,14 @@ function TenantDetailPage({ params }: { params: { id: string } }) {
   )
 }
 
+
+// export default function TenantDetailPageWrapper() {
+//   return (
+//     <Suspense fallback={<div>Loading...</div>}>
+//       <TenantDetailPage />
+//     </Suspense>
+//   );
+// }
 
 export default function TenantDetailPageWrapper() {
   return (

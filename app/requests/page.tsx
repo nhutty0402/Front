@@ -124,7 +124,7 @@ const priorityColors = {
 
 const priorityLabels = {
   low: "Thấp",
-  medium: "Trung bình",
+  // medium: "Trung bình",
   high: "Cao",
   urgent: "Khẩn cấp",
 }
@@ -170,7 +170,7 @@ export default function RequestsPage() {
       const s = status.toLowerCase()
       if (s.includes("đã xử lý") || s.includes("hoàn thành")) return "completed"
       if (s.includes("đang xử lý")) return "in_progress"
-      if (s.includes("từ chối") || s.includes("reject")) return "rejected"
+      // if (s.includes("từ chối") || s.includes("reject")) return "rejected"
       return "pending"
     }
 
@@ -409,7 +409,7 @@ export default function RequestsPage() {
               </div>
             </Card>
 
-            <Card className="p-3 lg:p-4">
+            {/* <Card className="p-3 lg:p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="p-1.5 lg:p-2 rounded-full bg-red-100">
                   <AlertTriangle className="h-3 w-3 lg:h-4 lg:w-4 text-red-600" />
@@ -419,7 +419,7 @@ export default function RequestsPage() {
                 <p className="text-xs lg:text-sm font-medium text-gray-600">Khẩn cấp</p>
                 <p className="text-lg lg:text-2xl font-bold text-red-600">{urgentRequests}</p>
               </div>
-            </Card>
+            </Card> */}
 
             <Card className="p-3 lg:p-4">
               <div className="flex items-center justify-between mb-2">
@@ -468,7 +468,7 @@ export default function RequestsPage() {
               </div>
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
+                  {/* <div>
                     <Label className="text-xs text-gray-600 mb-1 block">Loại</Label>
                     <Select value={filterType} onValueChange={setFilterType}>
                       <SelectTrigger className="h-9">
@@ -482,7 +482,7 @@ export default function RequestsPage() {
                         <SelectItem value="other">Khác</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
+                  </div> */}
 
                   <div>
                     <Label className="text-xs text-gray-600 mb-1 block">Trạng thái</Label>
@@ -495,13 +495,13 @@ export default function RequestsPage() {
                         <SelectItem value="pending">Chờ xử lý</SelectItem>
                         <SelectItem value="in_progress">Đang xử lý</SelectItem>
                         <SelectItem value="completed">Hoàn thành</SelectItem>
-                        <SelectItem value="rejected">Từ chối</SelectItem>
+                        {/* <SelectItem value="rejected">Từ chối</SelectItem> */}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
 
-                <div>
+                {/* <div>
                   <Label className="text-xs text-gray-600 mb-1 block">Mức độ ưu tiên</Label>
                   <Select value={filterPriority} onValueChange={setFilterPriority}>
                     <SelectTrigger className="h-9">
@@ -515,7 +515,7 @@ export default function RequestsPage() {
                       <SelectItem value="low">Thấp</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </div> */}
 
                 <Button
                   variant="outline"
@@ -536,7 +536,7 @@ export default function RequestsPage() {
 
           {/* Desktop Filters */}
           <div className="hidden lg:flex gap-4">
-            <Select value={filterType} onValueChange={setFilterType}>
+            {/* <Select value={filterType} onValueChange={setFilterType}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Lọc theo loại" />
               </SelectTrigger>
@@ -547,7 +547,7 @@ export default function RequestsPage() {
                 <SelectItem value="service">Dịch vụ</SelectItem>
                 <SelectItem value="other">Khác</SelectItem>
               </SelectContent>
-            </Select>
+            </Select> */}
 
             <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger className="w-48">
@@ -561,7 +561,7 @@ export default function RequestsPage() {
                 <SelectItem value="rejected">Từ chối</SelectItem>
               </SelectContent>
             </Select>
-
+{/* 
             <Select value={filterPriority} onValueChange={setFilterPriority}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Lọc theo mức độ" />
@@ -573,7 +573,7 @@ export default function RequestsPage() {
                 <SelectItem value="medium">Trung bình</SelectItem>
                 <SelectItem value="low">Thấp</SelectItem>
               </SelectContent>
-            </Select>
+            </Select> */}
 
             <Button
               variant="outline"
@@ -606,9 +606,9 @@ export default function RequestsPage() {
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-gray-900 text-sm lg:text-base truncate">{request.title}</h3>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <Badge variant="outline" className={`text-xs ${priorityColors[request.priority]}`}>
+                            {/* <Badge variant="outline" className={`text-xs ${priorityColors[request.priority]}`}>
                               {priorityLabels[request.priority]}
-                            </Badge>
+                            </Badge> */}
                             <Badge variant="outline" className={`text-xs ${statusColors[request.status]}`}>
                               {statusLabels[request.status]}
                             </Badge>
@@ -662,7 +662,7 @@ export default function RequestsPage() {
                     <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                       {/* Contact Buttons */}
                       <div className="flex gap-1">
-                        {request.tenantPhone && (
+                        {/* {request.tenantPhone && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -671,7 +671,7 @@ export default function RequestsPage() {
                           >
                             <Phone className="h-3 w-3" />
                           </Button>
-                        )}
+                        )} */}
                         {request.tenantEmail && (
                           <Button
                             variant="ghost"
@@ -696,14 +696,14 @@ export default function RequestsPage() {
                             >
                               Bắt đầu
                             </Button>
-                            <Button
+                            {/* <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleUpdateStatus(request.id, "rejected")}
                               className="bg-red-50 text-red-600 hover:bg-red-100 border-red-200 h-8 text-xs"
                             >
                               Từ chối
-                            </Button>
+                            </Button> */}
                           </>
                         )}
                         {request.status === "in_progress" && (
@@ -766,7 +766,7 @@ export default function RequestsPage() {
             </DialogHeader> */}
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label htmlFor="type">Loại yêu cầu</Label>
                   <Select name="type" defaultValue="maintenance">
                     <SelectTrigger>
@@ -793,7 +793,7 @@ export default function RequestsPage() {
                       <SelectItem value="urgent">Khẩn cấp</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </div> */}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="title">Tiêu đề</Label>
@@ -853,9 +853,9 @@ export default function RequestsPage() {
               </DialogHeader>
               <div className="space-y-4">
                 <div className="flex gap-2 flex-wrap">
-                  <Badge variant="outline" className={priorityColors[selectedRequest.priority]}>
+                  {/* <Badge variant="outline" className={priorityColors[selectedRequest.priority]}>
                     {priorityLabels[selectedRequest.priority]}
-                  </Badge>
+                  </Badge> */}
                   <Badge variant="outline" className={statusColors[selectedRequest.status]}>
                     {statusLabels[selectedRequest.status]}
                   </Badge>
@@ -934,7 +934,7 @@ export default function RequestsPage() {
                       >
                         Bắt đầu xử lý
                       </Button>
-                      <Button
+                      {/* <Button
                         variant="outline"
                         onClick={() => {
                           handleUpdateStatus(selectedRequest.id, "rejected")
@@ -943,7 +943,7 @@ export default function RequestsPage() {
                         className="flex-1 text-red-600 hover:text-red-700"
                       >
                         Từ chối
-                      </Button>
+                      </Button> */}
                     </>
                   )}
                   {selectedRequest.status === "in_progress" && (

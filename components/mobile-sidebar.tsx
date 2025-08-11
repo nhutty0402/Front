@@ -1,5 +1,5 @@
 
-
+'use client';
 import { Fragment } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -28,6 +28,7 @@ const navigation = [
   { name: "Doanh thu", href: "/reports", icon: BarChart3 },
   { name: "Quản lý hợp đồng", href: "/contracts", icon: FileText },
   { name: "Quản lý hóa đơn", href: "/finance", icon: DollarSign },
+  { name: "Lịch sử thanh toán", href: "/payment-history", icon: FileText },
   { name: "Dịch vụ", href: "/services", icon: Wrench },
   { name: "Cập nhật chỉ số", href: "/meter-readings", icon: Zap },
   { name: "Yêu cầu", href: "/requests", icon: MessageSquare },

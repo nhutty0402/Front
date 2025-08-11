@@ -1,5 +1,5 @@
-import { Suspense } from "react";
 "use client"
+import { Suspense } from "react";
 
 import { useEffect, useState, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
@@ -35,6 +35,8 @@ interface Transaction {
   tenant?: string
   status: "completed" | "pending" | "overdue"
   dueDate?: string
+  // xuất hóa đơn
+  chiSoId?: number | string
 }
 
 interface RoomOption {
@@ -81,7 +83,7 @@ function FinancePage() {
   const [rooms, setRooms] = useState<RoomOption[]>([])
   const [form, setForm] = useState({
     PhongID_id: "",
-    ThangNam: "",
+    ThangNam: new Date().toISOString().slice(0, 7),
     ChiSoDienCu: "",
     ChiSoDienMoi: "",
     ChiSoNuocCu: "",
@@ -133,6 +135,15 @@ function FinancePage() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
   }
 
+  // Lock invoice month to current month; ensure state stays current if user leaves page open
+  useEffect(() => {
+    const id = setInterval(() => {
+      const now = new Date().toISOString().slice(0, 7)
+      setForm((prev) => (prev.ThangNam !== now ? { ...prev, ThangNam: now } : prev))
+    }, 60_000)
+    return () => clearInterval(id)
+  }, [])
+
   const refreshInvoices = useCallback(async () => {
     const token = Cookies.get("token")
     console.log("Token từ cookie:", token)
@@ -183,6 +194,8 @@ function FinancePage() {
           tenant: item.HoTenKhachHang || undefined,
           status,
           dueDate: undefined,
+          // xuất hóa đơn
+          chiSoId: item.ChiSoID,
         }
       })
 
@@ -469,8 +482,8 @@ function FinancePage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Tháng</Label>
-                      <Input type="month" value={form.ThangNam} onChange={(e) => handleChange("ThangNam", e.target.value)} required />
+                      <Label>Ngày thu</Label>
+                      <Input type="date" value={new Date().toISOString().slice(0, 10)} disabled readOnly required />
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
@@ -545,9 +558,9 @@ function FinancePage() {
                 <Filter className="h-4 w-4 mr-1" />
                 Lọc
               </Button>
-              <Button variant="outline" size="sm">
+              {/* <Button variant="outline" size="sm">
                 <Download className="h-4 w-4" />
-              </Button>
+              </Button> */}
             </div>
           </div>
         </div>
@@ -560,13 +573,13 @@ function FinancePage() {
               <p className="text-gray-600">Theo dõi thu chi và báo cáo tài chính</p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setIsTariffDialogOpen(true)}>
+              {/* <Button variant="outline" onClick={() => setIsTariffDialogOpen(true)}>
                 Cập nhật giá điện/nước
               </Button>
               <Button variant="outline">
                 <Download className="h-4 w-4 mr-2" />
                 Xuất báo cáo
-              </Button>
+              </Button> */}
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
                   <Button>
@@ -681,14 +694,14 @@ function FinancePage() {
           {showFilters && (
             <Card className="lg:hidden p-4">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-medium">Bộ lọc</h3>
+                  
                 <Button variant="ghost" size="sm" onClick={() => setShowFilters(false)}>
                   <X className="h-4 w-4" />
                 </Button>
               </div>
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
+                  {/* <div>
                     <Label className="text-xs text-gray-600 mb-1 block">Loại</Label>
                     <Select value={filterType} onValueChange={setFilterType}>
                       <SelectTrigger className="h-9">
@@ -700,7 +713,7 @@ function FinancePage() {
                         <SelectItem value="expense">Chi phí</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
+                  </div> */}
 
                   <div>
                     <Label className="text-xs text-gray-600 mb-1 block">Trạng thái</Label>
@@ -718,7 +731,7 @@ function FinancePage() {
                   </div>
                 </div>
 
-                <div>
+                {/* <div>
                   <Label className="text-xs text-gray-600 mb-1 block">Danh mục</Label>
                   <Select value={filterCategory} onValueChange={setFilterCategory}>
                     <SelectTrigger className="h-9">
@@ -733,7 +746,7 @@ function FinancePage() {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </div> */}
 
                 <Button
                   variant="outline"
@@ -869,22 +882,32 @@ function FinancePage() {
                       )}
                     </div>
 
-                    {/* Action Buttons */}
+                    {/* xuất hóa đơn */}
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        onClick={() => {
+                          if (transaction.chiSoId != null) {
+                            router.push(`/invoices/${transaction.chiSoId}`)
+                          }
+                        }}
+                      >
                         <Eye className="h-3 w-3" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                      {/* icon chỉnh sửa */}
+                      {/* <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
                         <Edit className="h-3 w-3" />
-                      </Button>
-                      <Button
+                      </Button> */}
+                      {/* <Button
                         variant="ghost"
                         size="sm"
                         className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
                         onClick={() => handleDeleteTransaction(transaction.id)}
                       >
                         <Trash2 className="h-3 w-3" />
-                      </Button>
+                      </Button> */}
                     </div>
                   </div>
 
@@ -943,8 +966,8 @@ function FinancePage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Tháng</Label>
-                <Input type="month" value={form.ThangNam} onChange={(e) => handleChange("ThangNam", e.target.value)} required />
+                <Label>Ngày thu</Label>
+                <Input type="date" value={new Date().toISOString().slice(0, 10)} disabled readOnly required />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -1091,10 +1114,10 @@ function FinancePage() {
               }
             }}
           >
-            <DialogHeader>
+            {/* <DialogHeader>
               <DialogTitle>Cập nhật giá điện/nước</DialogTitle>
               <DialogDescription>Gửi PUT tới /api/giadiennuoc/[id]</DialogDescription>
-            </DialogHeader>
+            </DialogHeader> */}
 
             <div className="grid gap-3 py-2">
               <div className="space-y-1">

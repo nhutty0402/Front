@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Sidebar } from "@/components/sidebar"
 import { MobileSidebar } from "@/components/mobile-sidebar"
 import { Plus, Edit, Trash2, FileText, Calendar, Menu, Eye, Download, User, Building } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { parse, isValid } from "date-fns"
 
 // Utility function to sanitize HTML input to prevent XSS
@@ -135,6 +136,7 @@ const statusLabels = {
 }
 
 export default function ContractsPage() {
+  const router = useRouter()
   const [contracts, setContracts] = useState<Contract[]>(mockContracts)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
@@ -165,34 +167,28 @@ export default function ContractsPage() {
     const fetchContracts = async () => {
       setIsLoading(true)
       try {
-        const res = await axiosClient.get("https://all-oqry.onrender.com/api/hopdong")
+        const res = await axiosClient.get("https://all-oqry.onrender.com/api/hopdong/thongtin-ngan")
         const list = Array.isArray(res.data) ? res.data : res.data?.data || []
         const mapped: Contract[] = list.map((c: any) => {
           const hopDongId = c.HopDongID || c._id || c.id
-          const trangThai: string = c.TrangThaiHopDong || "HoatDong"
-          const statusMap: Record<string, Contract["status"]> = {
-            HoatDong: "active",
-            HetHan: "expired",
-            DaHuy: "terminated",
-          }
-          const status: Contract["status"] = statusMap[trangThai] || "pending"
           return {
             id: String(hopDongId ?? Math.random()),
-            contractNumber: String(c.SoHopDong || hopDongId || "HD" + Math.floor(Math.random() * 10000)),
-            room: String(c.SoPhong || c.Phong || c.PhongID_id || ""),
-            building: String(c.DayPhong || c.ToaNha || ""),
-            tenant: String(c.HoTenKhachHang || c.TenKhachHang || c.KhachHang || ""),
-            tenantPhone: String(c.SoDienThoai || ""),
-            startDate: String(c.NgayBatDau || new Date().toISOString().split("T")[0]),
-            endDate: String(c.NgayKetThuc || new Date().toISOString().split("T")[0]),
-            rentAmount: Number(c.GiaPhong || 0),
-            deposit: Number(c.TienDatCoc || 0),
-            status,
-            terms: mockContracts[0]?.terms || "",
-            createdDate: String(c.NgayTaoHopDong || c.NgayTao || new Date().toISOString().split("T")[0]),
+            contractNumber: String(hopDongId ?? ""),
+            room: String(c.Phong ?? ""),
+            building: "",
+            tenant: String(c.Ten ?? ""),
+            tenantPhone: String(c.SoDienThoai ?? ""),
+            startDate: new Date().toISOString().split("T")[0],
+            endDate: new Date().toISOString().split("T")[0],
+            rentAmount: Number(c.Gia ?? 0),
+            deposit: 0,
+            status: "active",
+            terms: "",
+            createdDate: new Date().toISOString().split("T")[0],
           }
         })
-        setContracts(mapped)
+        const notCanceled = mapped.filter((c) => c.status !== "terminated")
+        setContracts(notCanceled)
       } catch (e) {
         setContracts([])
       } finally {
@@ -205,9 +201,9 @@ export default function ContractsPage() {
   const filteredContracts = contracts.filter((contract) => {
     const matchesStatus = filterStatus === "all" || contract.status === filterStatus
     const matchesSearch =
-      contract.contractNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contract.tenant.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contract.room.toLowerCase().includes(searchTerm.toLowerCase())
+      String(contract.contractNumber || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(contract.tenant || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(contract.room || "").toLowerCase().includes(searchTerm.toLowerCase())
     return matchesStatus && matchesSearch
   })
 
@@ -388,6 +384,20 @@ export default function ContractsPage() {
   const handleDeleteContract = (id: string) => {
     if (confirm("Bạn có chắc muốn xóa hợp đồng này?")) {
       setContracts(contracts.filter((contract) => contract.id !== id))
+    }
+  }
+
+  // Hủy hợp đồng qua API
+  const handleCancelContract = async (contract: Contract) => {
+    const ok = confirm(`Bạn có chắc muốn hủy hợp đồng ${contract.contractNumber}?`)
+    if (!ok) return
+    try {
+      await axiosClient.put(`https://all-oqry.onrender.com/api/hopdong/huy/${contract.id}`, {})
+      // Bỏ khỏi danh sách hiển thị sau khi hủy
+      setContracts((prev) => prev.filter((c) => c.id !== contract.id))
+      alert("Đã hủy hợp đồng thành công")
+    } catch (e) {
+      alert("Không thể hủy hợp đồng. Vui lòng thử lại.")
     }
   }
 
@@ -573,7 +583,7 @@ export default function ContractsPage() {
         {/* Mobile Header */}
         <div className="lg:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Hợp đồng</h1>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Quản lý hợp đồng</h1>
             <Button variant="ghost" size="sm" onClick={() => setIsMobileMenuOpen(true)} aria-label="Mở menu">
               <Menu className="h-5 w-5" />
             </Button>
@@ -582,12 +592,12 @@ export default function ContractsPage() {
 
         <div className="flex-1 overflow-auto p-4 lg:p-6">
           <div className="mb-4 lg:mb-6 flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
-            <div>
+            {/* <div>
               <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">Quản lý Hợp đồng</h1>
               <p className="text-gray-600 dark:text-gray-400 text-sm lg:text-base">
                 Quản lý hợp đồng thuê phòng và theo dõi thời hạn
               </p>
-            </div>
+            </div> */}
 
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
@@ -860,26 +870,7 @@ export default function ContractsPage() {
                         </CardDescription>
                       </div>
                       <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="bg-transparent"
-                          onClick={() => handleViewContract(contract)}
-                          aria-label={`Xem hợp đồng ${contract.contractNumber}`}
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          Xem
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="bg-transparent"
-                          onClick={() => handlePrintContract(contract)}
-                          aria-label={`In hợp đồng ${contract.contractNumber}`}
-                        >
-                          <Download className="h-4 w-4 mr-1" />
-                          In
-                        </Button>
+                     
                       </div>
                     </div>
                   </CardHeader>
@@ -902,7 +893,7 @@ export default function ContractsPage() {
                       <div>
                         <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tiền thuê</p>
                         <p className="text-sm font-bold">{contract.rentAmount.toLocaleString()}₫/tháng</p>
-                        <p className="text-xs text-gray-500">Cọc: {contract.deposit.toLocaleString()}₫</p>
+                        {/* <p className="text-xs text-gray-500">Cọc: {contract.deposit.toLocaleString()}₫</p> */}
                       </div>
                        <div>
                         <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Ngày tạo</p>
@@ -916,14 +907,24 @@ export default function ContractsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex-1 bg-transparent"
-                        onClick={() => handleEditContract(contract)}
-                        aria-label={`Sửa hợp đồng ${contract.contractNumber}`}
+                        className="flex-1 bg-green-50 text-green-600 hover:bg-green-100 border-green-200 text-xs h-9"
+                        onClick={() => router.push(`/rooms?viewContractId=${encodeURIComponent(contract.id)}`)}
+                        aria-label={`Chi tiết hợp đồng ${contract.contractNumber}`}
                       >
-                        <Edit className="h-3 w-3 mr-1" />
-                        Sửa
+                        <FileText className="h-3 w-3 mr-1" />
+                        Chi Tiết Hợp Đồng
                       </Button>
                       <Button
+                        variant="outline"
+                        size="sm"
+                        className="bg-transparent text-rose-600 border-rose-200 hover:bg-rose-50"
+                        onClick={() => handleCancelContract(contract)}
+                        aria-label={`Hủy hợp đồng ${contract.contractNumber}`}
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Hủy
+                      </Button>
+                      {/* <Button
                         variant="outline"
                         size="sm"
                         className="bg-transparent"
@@ -932,8 +933,8 @@ export default function ContractsPage() {
                       >
                         <Calendar className="h-3 w-3 mr-1" />
                         Gia hạn
-                      </Button>
-                      <Button
+                      </Button> */}
+                      {/* <Button
                         variant="outline"
                         size="sm"
                         className="text-red-600 hover:text-red-700 bg-transparent"
@@ -941,7 +942,7 @@ export default function ContractsPage() {
                         aria-label={`Xóa hợp đồng ${contract.contractNumber}`}
                       >
                         <Trash2 className="h-3 w-3" />
-                      </Button>
+                      </Button> */}
                     </div>
                   </CardContent>
                 </Card>

@@ -1,8 +1,7 @@
-import { Suspense } from "react";
 "use client"; // 👈 Đảm bảo có dòng này trên cùng
+import { Suspense } from "react";
 import Cookies from 'js-cookie'
 import React from "react"
-
 import { Ban } from "lucide-react";
 
 import { useRouter } from "next/navigation";
