@@ -1,6 +1,6 @@
 "use client"
 import { Suspense } from "react";
-
+import { Check } from "lucide-react"
 import { useEffect, useState, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Cookies from "js-cookie"
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog"
 import { Sidebar } from "@/components/sidebar"
 import { MobileSidebar } from "@/components/mobile-sidebar"
+import { useSearchParams } from "next/navigation"
 import { DollarSign, TrendingUp, TrendingDown, Receipt, Plus, Search, Filter, Download, Eye, Edit, Trash2, Menu, AlertCircle, X, Calendar, User, Home } from "lucide-react"
 
 interface Transaction {
@@ -75,8 +76,18 @@ function FinancePage() {
   const [filterCategory, setFilterCategory] = useState<string>("all")
   const [searchTerm, setSearchTerm] = useState("")
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const searchParams = useSearchParams()
+  const [confirmingId, setConfirmingId] = useState<string | null>(null)
+
+  // Mở dialog thêm hóa đơn khi có query từ trang chủ
+  useEffect(() => {
+    if (searchParams?.get('openAddInvoice') === '1') {
+      setIsAddDialogOpen(true)
+    }
+  }, [searchParams])
   const [showFilters, setShowFilters] = useState(false)
   const [selectedMonth, setSelectedMonth] = useState("all")
+  const [monthsThisYear, setMonthsThisYear] = useState<{ value: string; label: string }[]>([])
   const router = useRouter()
 
   // State for creating invoice
@@ -105,6 +116,19 @@ function FinancePage() {
     GiaMoi: "",
     NgayCapNhat: new Date().toISOString().slice(0, 19),
   })
+
+  // Tạo danh sách tháng từ 01 đến tháng hiện tại của năm hiện hành
+  useEffect(() => {
+    const now = new Date()
+    const year = now.getFullYear()
+    const currentMonth = now.getMonth() + 1
+    const items: { value: string; label: string }[] = []
+    for (let m = currentMonth; m >= 1; m--) {
+      const mm = String(m).padStart(2, '0')
+      items.push({ value: `${year}-${mm}`, label: `${mm}/${year}` })
+    }
+    setMonthsThisYear(items)
+  }, [])
 
   const handleChange = (name: keyof typeof form, value: string) => {
     setForm((prev) => ({ ...prev, [name]: value }))
@@ -177,14 +201,20 @@ function FinancePage() {
         const startOfCurrentMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
 
         let status: Transaction["status"]
-        if (String(item.TrangThaiThanhToan) === "0") {
+        if (String(item.TrangThaiThanhToan) === "0" || String(item.TrangThaiThanhToan).toUpperCase() === "Y") {
           status = "completed"
         } else {
           status = itemMonthDate < startOfCurrentMonth ? "overdue" : "pending"
         }
+// THAY
+        // Lấy id hoá đơn linh hoạt theo nhiều khả năng tên trường từ API
+        const invoiceIdCandidate =
+          item.ChiSoID ?? item.ChiSoId ?? item.chiSoID ?? item.chiSoId ??
+          item.HoaDonID ?? item.HoaDonId ?? item.hoaDonID ?? item.hoaDonId ??
+          item._id ?? item.id
 
         return {
-          id: `${item.ChiSoID ?? idx}-${idx}`,
+          id: `${invoiceIdCandidate ?? idx}-${idx}`,
           type: "income",
           category: "Hóa đơn",
           description: `Hóa đơn phòng ${String(item.DayPhong ?? "")}${String(item.SoPhong ?? "")} - Tháng ${new Date(firstDay).toLocaleDateString("vi-VN", { month: "2-digit", year: "numeric" })}`,
@@ -195,7 +225,7 @@ function FinancePage() {
           status,
           dueDate: undefined,
           // xuất hóa đơn
-          chiSoId: item.ChiSoID,
+          chiSoId: invoiceIdCandidate != null ? String(invoiceIdCandidate) : undefined,
         }
       })
 
@@ -204,6 +234,36 @@ function FinancePage() {
       console.error("Lỗi khi gọi API hoadon:", error)
     }
   }, [router])
+
+  const confirmPayment = useCallback(async (transaction: Transaction) => {
+    try {
+      if (!transaction.chiSoId) {
+        alert("Không tìm thấy ChiSoID của hoá đơn")
+        return
+      }
+      const token = Cookies.get("token")
+      if (!token || token === "null" || token === "undefined") {
+        router.replace("/login")
+        return
+      }
+      setConfirmingId(transaction.id)
+      const headers = { headers: { Authorization: `Bearer ${token}` } }
+      await axiosClient.put(
+        `https://all-oqry.onrender.com/api/hoadon/${encodeURIComponent(String(transaction.chiSoId))}/thanh-toan`,
+        {},
+        headers,
+      )
+      setTransactions((prev) =>
+        prev.map((t) => (t.id === transaction.id ? { ...t, status: "completed" } : t)),
+      )
+      await refreshInvoices()
+    } catch (err: any) {
+      console.error("Xác nhận thanh toán thất bại:", err)
+      alert("Không thể xác nhận thanh toán: " + (err?.response?.data?.message || err?.message))
+    } finally {
+      setConfirmingId(null)
+    }
+  }, [refreshInvoices, router])
 
   // Fetch invoices on load
   useEffect(() => {
@@ -669,11 +729,10 @@ function FinancePage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                <SelectItem value="all">Tất cả</SelectItem>
-                  <SelectItem value="2024-12">12/2024</SelectItem>
-                  <SelectItem value="2024-11">11/2024</SelectItem>
-                  <SelectItem value="2024-10">10/2024</SelectItem>
-                  <SelectItem value="2024-09">09/2024</SelectItem>
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  {monthsThisYear.map((m) => (
+                    <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -790,7 +849,7 @@ function FinancePage() {
               </SelectContent>
             </Select>
 
-            <Select value={filterCategory} onValueChange={setFilterCategory}>
+            {/* <Select value={filterCategory} onValueChange={setFilterCategory}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Lọc theo danh mục" />
               </SelectTrigger>
@@ -802,7 +861,7 @@ function FinancePage() {
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </Select> */}
 
             <Button
               variant="outline"
@@ -896,11 +955,19 @@ function FinancePage() {
                       >
                         <Eye className="h-3 w-3" />
                       </Button>
-                      {/* icon chỉnh sửa */}
-                      {/* <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                        <Edit className="h-3 w-3" />
-                      </Button> */}
-                      {/* <Button
+                      {transaction.status !== "completed" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={() => confirmPayment(transaction)}
+                          disabled={confirmingId === transaction.id}
+                          title="Xác nhận đã thanh toán"
+                        >
+                          <Check className="h-4 w-4 text-green-600" />
+                        </Button>
+                      )}
+                       {/* <Button
                         variant="ghost"
                         size="sm"
                         className="h-7 w-7 p-0 text-red-600 hover:text-red-700"

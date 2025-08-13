@@ -125,79 +125,86 @@ export default function InvoiceDetailPage() {
       router.replace("/login")
       return
     }
-
+  
     const fetchDetail = async () => {
       try {
         setLoading(true)
         setError(null)
         const id = params?.id
-        // Gọi API theo id
+  
+        // Gọi API
         const res = await axiosClient.get(`https://all-oqry.onrender.com/api/hoadon/hoadon/chitiet/${id}`)
-        const raw = res.data
-        const detail: any = Array.isArray(raw) ? raw[0] : raw?.data ?? raw
+        console.log("API trả về:", res.data)
+  
+        // Lấy chi tiết từ API (bất kể dạng nào)
+        let detail: any
+        if (Array.isArray(res.data)) {
+          detail = res.data[0]
+        } else if (res.data?.data) {
+          detail = res.data.data
+        } else {
+          detail = res.data
+        }
+  
+
+        console.log("Chi tiết sau khi parse:", detail)
         setData(detail as InvoiceDetail)
-
-        // Map API -> view model required by user
+  
+        // Chuyển sang ViewModel dựa trên dữ liệu API
         const toNumber = (v: any) => Number(v ?? 0) || 0
-        const soDien = toNumber(detail?.SoDienDaTieuThu)
-        const soNuoc = toNumber(detail?.SoNuocDaTieuThu)
-        const giaDien = toNumber(detail?.GiaDienMoi)
-        const giaNuoc = toNumber(detail?.GiaNuocMoi)
-        const tienPhong = toNumber(detail?.TienPhong)
-        const tienDien = soDien * giaDien
-        const tienNuoc = soNuoc * giaNuoc
-        const phiSuaChua = toNumber(detail?.PhiSuaChua)
-        const phiTru = toNumber(detail?.PhiTru)
-        const phiInternet = toNumber(detail?.PhiInternet ?? detail?.Internet)
-        const phiRac = toNumber(detail?.PhiRac ?? detail?.PhiDoRac ?? detail?.Rac)
-        const phiNhaXe = toNumber(detail?.PhiNhaXe ?? detail?.PhiGiuXe ?? detail?.NhaXe)
-        const tienTra = toNumber(detail?.TienTra ?? detail?.Tientra)
-        const tongCong =
-          tienPhong + tienDien + tienNuoc + phiInternet + phiRac + phiNhaXe + phiSuaChua - phiTru
-        const dsDichVu: InvoiceServiceItem[] = [
-          { ten: "Điện", gia: tienDien },
-          { ten: "Nước", gia: tienNuoc },
-        ]
-        if (phiInternet) dsDichVu.push({ ten: "Internet", gia: phiInternet })
-        if (phiRac) dsDichVu.push({ ten: "Đổ rác", gia: phiRac })
-        if (phiNhaXe) dsDichVu.push({ ten: "Nhà xe", gia: phiNhaXe })
-        if (phiSuaChua) dsDichVu.push({ ten: "Sửa chữa", gia: phiSuaChua })
-        if (phiTru) dsDichVu.push({ ten: "Khấu trừ", gia: -Math.abs(phiTru) })
-
+  
         const vm: InvoiceViewModel = {
-          chiSoID: detail?.ChiSoID,
-          phong: `${String(detail?.DayPhong ?? "").trim()} ${String(detail?.SoPhong ?? "").trim()}`.trim(),
-          thangNam: String(detail?.ThangNam ?? ""),
-          ngayVao: String(detail?.NgayVao ?? detail?.NgayBatDau ?? "-")
+          chiSoID: detail?.chiSoID ?? detail?.ChiSoID,
+          phong: detail?.phong || `${String(detail?.DayPhong ?? "").trim()} ${String(detail?.SoPhong ?? "").trim()}`.trim(),
+          thangNam: detail?.thangNam || String(detail?.ThangNam ?? ""),
+          ngayVao: (detail?.ngayVao || detail?.NgayVao || detail?.NgayBatDau || "-")
             .replace("T00:00:00.000Z", "")
             .replace("T00:00:00Z", ""),
-          tenKhachHang: String(detail?.HoTenKhachHang ?? ""),
-          soDienThoai: String(detail?.SoDienThoai ?? ""),
-          tienPhong,
-          tienDien,
-          tienNuoc,
-          suaChua: phiSuaChua,
-          phiTru,
-          tienTra,
-          tienNo: Math.max(0, tongCong - tienTra),
-          dsDichVu,
-          tongCong,
-          tongCongChu: numberToVietnamese(tongCong) ? numberToVietnamese(tongCong) + " đồng" : "",
-          trangThai:
-            String(detail?.TrangThaiThanhToan) === "Y" || String(detail?.TrangThaiThanhToan) === "0"
+            tenKhachHang:
+            (detail?.tenKhachHang ||
+              detail?.TenKhachHang ||
+              detail?.HoTenKhachHang ||
+              detail?.khachHang?.hoTen ||
+              detail?.KhachHang?.hoTen ||
+              "").trim(),
+          // ✅ Lấy SĐT khách hàng từ nhiều key khác nhau
+          soDienThoai:
+            (detail?.soDienThoai ||
+              detail?.SoDienThoai ||
+              detail?.SDT ||
+              detail?.khachHang?.soDienThoai ||
+              detail?.KhachHang?.soDienThoai ||
+              "").trim(),
+          tienPhong: toNumber(detail?.tienPhong || detail?.TienPhong),
+          tienDien: toNumber(detail?.tienDien || detail?.TienDien),
+          tienNuoc: toNumber(detail?.tienNuoc || detail?.TienNuoc),
+          suaChua: toNumber(detail?.suaChua || detail?.PhiSuaChua),
+          phiTru: toNumber(detail?.phiTru || detail?.PhiTru),
+          tienTra: toNumber(detail?.tienTra || detail?.TienTra),
+          tienNo: toNumber(detail?.tienNo),
+          dsDichVu: Array.isArray(detail?.dsDichVu) ? detail.dsDichVu : [],
+          tongCong: toNumber(detail?.tongCong),
+          tongCongChu: detail?.tongCongChu || (numberToVietnamese(toNumber(detail?.tongCong)) + " đồng"),
+          trangThai: detail?.trangThai ||
+            (String(detail?.TrangThaiThanhToan) === "Y" || String(detail?.TrangThaiThanhToan) === "0"
               ? "Đã thanh toán"
-              : "Chưa thanh toán",
+              : "Chưa thanh toán"),
         }
-        setView(vm)
+  
         console.log("InvoiceViewModel:", vm)
+        setView(vm)
       } catch (e: any) {
+        console.error(e)
         setError(e?.message || "Không thể tải chi tiết hoá đơn")
       } finally {
         setLoading(false)
       }
     }
+  
     fetchDetail()
   }, [params?.id, router])
+  
+  
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -258,14 +265,13 @@ export default function InvoiceDetailPage() {
                     {/* Header like screenshot */}
                     <div className="text-center">
                       <div className="text-xl font-extrabold tracking-wide">HÓA ĐƠN TIỀN TRỌ</div>
-                      <div className="text-xs text-gray-600 mt-1">Ngày thu: {new Date().toLocaleDateString("vi-VN")}</div>
                     </div>
 
                     {/* Info left */}
                     <div className="mt-4 space-y-1 text-sm">
                       <div><span className="font-semibold">Họ tên:</span> {view.tenKhachHang}</div>
-                      <div><span className="font-semibold">Dãy:</span> {String((data as any).DayPhong || "")}</div>
-                      <div><span className="font-semibold">Phòng:</span> {String((data as any).SoPhong || "")}</div>
+                      <div><span className="font-semibold">Số điện thoại:</span> {view.soDienThoai}</div>
+                      <div><span className="font-semibold">Phòng:</span> {view.phong}</div>
                       <div><span className="font-semibold">Ngày vào:</span> {String(view.ngayVao)}</div>
                     </div>
 
@@ -285,18 +291,12 @@ export default function InvoiceDetailPage() {
                         <div>Nước:</div>
                         <div className="tabular-nums">{currency(view.tienNuoc)}</div>
                       </div>
-                      <div className="flex items-center justify-between py-2">
-                        <div>Internet:</div>
-                        <div className="tabular-nums">{currency((view.dsDichVu.find(d=>d.ten==="Internet")?.gia)||0)}</div>
-                      </div>
-                      <div className="flex items-center justify-between py-2">
-                        <div>Đổ rác:</div>
-                        <div className="tabular-nums">{currency((view.dsDichVu.find(d=>d.ten==="Đổ rác")?.gia)||0)}</div>
-                      </div>
-                      <div className="flex items-center justify-between py-2">
-                        <div>Nhà xe:</div>
-                        <div className="tabular-nums">{currency((view.dsDichVu.find(d=>d.ten==="Nhà xe")?.gia)||0)}</div>
-                      </div>
+                      {view.dsDichVu.map((dv, idx) => (
+                        <div key={idx} className="flex items-center justify-between py-2">
+                          <div>{dv.ten}:</div>
+                          <div className="tabular-nums">{currency(dv.gia)}</div>
+                        </div>
+                      ))}
                       <div className="flex items-center justify-between py-2">
                         <div>Sửa chữa:</div>
                         <div className="tabular-nums">{currency(view.suaChua)}</div>
@@ -305,6 +305,14 @@ export default function InvoiceDetailPage() {
                         <div>Phí trừ:</div>
                         <div className="tabular-nums">{currency(view.phiTru)}</div>
                       </div>
+                      <div className="flex items-center justify-between py-2">
+                        <div>Tiền trả:</div>
+                        <div className="tabular-nums">{currency(view.tienTra)}</div>
+                      </div>
+                      <div className="flex items-center justify-between py-2">
+                        <div>Tiền nợ:</div>
+                        <div className="tabular-nums">{currency(view.tienNo)}</div>
+                      </div>
                     </div>
 
                     <div className="mt-4 text-center">
@@ -312,17 +320,7 @@ export default function InvoiceDetailPage() {
                       <div className="text-sm italic mt-1">Bằng chữ: {view.tongCongChu}</div>
                     </div>
 
-                    {/* Payers */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 text-sm">
-                      <div className="text-center">
-                        <div className="text-gray-600">Người thanh toán</div>
-                        <div className="font-medium">{view.tenKhachHang}</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-gray-600">Người nhận</div>
-                        <div className="font-medium">Chủ trọ</div>
-                      </div>
-                    </div>
+                    {/* Chỉ hiển thị các trường theo yêu cầu, ẩn khu vực chữ ký */}
 
                     {/* Actions */}
                     <div className="flex items-center justify-between mt-6 print:hidden">

@@ -1,5 +1,6 @@
-import { Suspense } from "react";
 "use client"
+import { Suspense } from "react";
+
 
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -298,9 +299,9 @@ function TenantDetailPage({ params }: { params: { id: string } }) {
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h4 className="font-medium">Tháng {payment.month}</h4>
-                          <Badge className={statusColors[payment.status]} size="sm">
+                          {/* <Badge className={statusColors[payment.status]} size="sm">
                             {statusLabels[payment.status]}
-                          </Badge>
+                          </Badge> */}
                         </div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                           Hạn thanh toán: {new Date(payment.dueDate).toLocaleDateString("vi-VN")}
@@ -337,9 +338,9 @@ function TenantDetailPage({ params }: { params: { id: string } }) {
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-1">
                             <h4 className="font-medium">{request.title}</h4>
-                            <Badge className={statusColors[request.status]} size="sm">
+                            {/* <Badge className={statusColors[request.status]} size="sm">
                               {statusLabels[request.status]}
-                            </Badge>
+                            </Badge> */}
                           </div>
                           <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{request.description}</p>
                           <p className="text-xs text-gray-500">
@@ -365,10 +366,10 @@ function TenantDetailPage({ params }: { params: { id: string } }) {
 }
 
 
-export default function TenantDetailPageWrapper() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <TenantDetailPage />
-    </Suspense>
-  );
-}
+// export default function TenantDetailPageWrapper() {
+//   return (
+//     <Suspense fallback={<div>Loading...</div>}>
+//       <TenantDetailPage />
+//     </Suspense>
+//   );
+// }

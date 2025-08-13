@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import axiosClient from "@/lib/axiosClient"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -142,6 +142,8 @@ export default function ContractsPage() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null)
   const [filterStatus, setFilterStatus] = useState<string>("all")
+  const [filterBuilding, setFilterBuilding] = useState<string>("all")
+  const [filterRoom, setFilterRoom] = useState<string>("all")
   const [searchTerm, setSearchTerm] = useState("")
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [prefilledRoom, setPrefilledRoom] = useState("")
@@ -175,7 +177,7 @@ export default function ContractsPage() {
             id: String(hopDongId ?? Math.random()),
             contractNumber: String(hopDongId ?? ""),
             room: String(c.Phong ?? ""),
-            building: "",
+            building: String(c.DayPhong ?? ""),
             tenant: String(c.Ten ?? ""),
             tenantPhone: String(c.SoDienThoai ?? ""),
             startDate: new Date().toISOString().split("T")[0],
@@ -198,13 +200,36 @@ export default function ContractsPage() {
     fetchContracts()
   }, [])
 
+  // Options for filters
+  const buildingOptions = useMemo(() => {
+    const set = new Set<string>()
+    contracts.forEach((c) => {
+      const b = (c.building || "").trim()
+      if (b) set.add(b)
+    })
+    return Array.from(set)
+  }, [contracts])
+
+  const roomOptions = useMemo(() => {
+    const set = new Set<string>()
+    contracts
+      .filter((c) => filterBuilding === "all" || c.building === filterBuilding)
+      .forEach((c) => {
+        const r = (c.room || "").trim()
+        if (r) set.add(r)
+      })
+    return Array.from(set)
+  }, [contracts, filterBuilding])
+
   const filteredContracts = contracts.filter((contract) => {
     const matchesStatus = filterStatus === "all" || contract.status === filterStatus
+    const matchesBuilding = filterBuilding === "all" || contract.building === filterBuilding
+    const matchesRoom = filterRoom === "all" || contract.room === filterRoom
     const matchesSearch =
       String(contract.contractNumber || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       String(contract.tenant || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       String(contract.room || "").toLowerCase().includes(searchTerm.toLowerCase())
-    return matchesStatus && matchesSearch
+    return matchesStatus && matchesBuilding && matchesRoom && matchesSearch
   })
 
   const handleAddContract = async (formData: FormData) => {
@@ -840,6 +865,42 @@ export default function ContractsPage() {
                 <SelectItem value="terminated">Đã chấm dứt</SelectItem>
               </SelectContent>
             </Select>
+
+            <Select value={filterBuilding} onValueChange={setFilterBuilding}>
+              <SelectTrigger className="w-full lg:w-40">
+                <SelectValue placeholder="Lọc theo dãy" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả dãy</SelectItem>
+                {buildingOptions.map((b) => (
+                  <SelectItem key={b} value={b}>{b}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={filterRoom} onValueChange={setFilterRoom}>
+              <SelectTrigger className="w-full lg:w-40">
+                <SelectValue placeholder="Lọc theo phòng" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả phòng</SelectItem>
+                {roomOptions.map((r) => (
+                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Button
+              variant="outline"
+              onClick={() => {
+                setFilterStatus("all")
+                setFilterBuilding("all")
+                setFilterRoom("all")
+                setSearchTerm("")
+              }}
+            >
+              Xóa bộ lọc
+            </Button>
           </div>
 
           {/* Contracts List */}
@@ -876,7 +937,7 @@ export default function ContractsPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-                      <div>
+                      {/* <div>
                         <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Thời hạn</p>
                         <p className="text-sm">
                           {new Date(validateDate(contract.startDate)).toLocaleDateString("vi-VN")} -{" "}
@@ -889,7 +950,7 @@ export default function ContractsPage() {
                               : `Quá hạn ${Math.abs(daysUntilExpiry)} ngày`}
                           </p>
                         )}
-                      </div>
+                      </div> */}
                       <div>
                         <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tiền thuê</p>
                         <p className="text-sm font-bold">{contract.rentAmount.toLocaleString()}₫/tháng</p>

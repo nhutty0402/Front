@@ -21,6 +21,7 @@ import { TrendingUp, TrendingDown, DollarSign, Users, Building2, Menu, Download,
 import { MobileSidebar } from "@/components/mobile-sidebar"
 import { Sidebar } from "@/components/sidebar"
 import axiosClient from "@/lib/axiosClient"
+import { useIsMobile } from "@/components/ui/use-mobile"
 
 // Định nghĩa interface cho dữ liệu pie chart
 interface PieDataEntry {
@@ -95,6 +96,7 @@ const renderPieLabel = (entry: any) => {
 
 export default function ReportsPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const isMobile = useIsMobile()
   // Bỏ bộ lọc theo tháng/quý/năm
 
   // State: API data
@@ -161,7 +163,7 @@ export default function ReportsPage() {
       bgColor: "bg-green-50",
     },
     {
-      title: "Tỷ lệ lấp đầy",
+      title: "Tỷ lệ phòng đã thuê",
       value: summary ? `${summary.tyLeLapDay}%` : "-",
       change: undefined as string | undefined,
       trend: "up" as const,
@@ -288,12 +290,23 @@ export default function ReportsPage() {
                   <CardDescription>So sánh doanh thu và chi phí vận hành theo từng tháng</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-80 w-full">
+                  <div className="w-full h-72 sm:h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={monthlyRevenue} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
+                      <BarChart
+                        data={monthlyRevenue}
+                        margin={{ top: 20, right: 12, left: 12, bottom: isMobile ? 48 : 20 }}
+                      >
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" height={40} tick={{ fontSize: 12 }} />
-                        <YAxis width={60} tick={{ fontSize: 12 }} tickFormatter={formatCurrency} />
+                        <XAxis
+                          dataKey="month"
+                          height={isMobile ? 56 : 40}
+                          tick={{ fontSize: isMobile ? 10 : 12 }}
+                          interval={isMobile ? 0 : "preserveStartEnd"}
+                          angle={isMobile ? -45 : 0}
+                          textAnchor={isMobile ? "end" : "middle"}
+                          tickMargin={isMobile ? 12 : 8}
+                        />
+                        <YAxis width={isMobile ? 48 : 60} tick={{ fontSize: 12 }} tickFormatter={formatCurrency} />
                         <Tooltip content={<CustomTooltip />} />
                         <Bar dataKey="revenue" fill="#3b82f6" name="Doanh thu" />
                         <Bar dataKey="expenses" fill="#ef4444" name="Chi phí" />

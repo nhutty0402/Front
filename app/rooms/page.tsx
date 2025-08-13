@@ -4,7 +4,7 @@ import Cookies from 'js-cookie'
 import React from "react"
 import { Ban } from "lucide-react";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { FunctionComponent } from "react"
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
@@ -350,6 +350,14 @@ const RoomsPage: FunctionComponent = () => {
   const [showContractPreview, setShowContractPreview] = useState(false)
   const [contractData, setContractData] = useState<any>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const searchParams = useSearchParams();
+
+  // Mở dialog thêm phòng nếu được điều hướng từ quick action
+  useEffect(() => {
+    if (searchParams?.get('openAddRoom') === '1') {
+      setIsAddDialogOpen(true)
+    }
+  }, [searchParams])
   const [roomToDelete, setRoomToDelete] = useState<Room | null>(null)
 
   const [cccdImages, setCccdImages] = useState<{

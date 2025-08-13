@@ -8,6 +8,7 @@ import { Building2, Users, FileText, DollarSign, MessageSquare, Menu, TrendingUp
 import { MobileSidebar } from "@/components/mobile-sidebar"
 import { Sidebar } from "@/components/sidebar"
 import axiosClient from "@/lib/axiosClient"
+import { useRouter } from "next/navigation"
 
 interface DashboardStatsResponse {
   totalRooms: number
@@ -26,9 +27,16 @@ const formatCurrency = (value: number) => {
 }
 
 export default function Dashboard() {
+  const router = useRouter()
   const [userRole, setUserRole] = useState<"admin" | "tenant">("admin")
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [dashboardStats, setDashboardStats] = useState<DashboardStatsResponse | null>(null)
+  const [notifications, setNotifications] = useState<{
+    message: string
+    tongSoThongBao: number
+    thongBaoHopDong: number
+    danhSachThongBao: { id: string | number; message: string; type?: string; time?: string }[]
+  } | null>(null)
 
   useEffect(() => {
     const BASE_URL = "https://all-oqry.onrender.com"
@@ -39,6 +47,42 @@ export default function Dashboard() {
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error("Failed to load dashboard stats", error)
+      }
+    })()
+  }, [])
+
+  // Thông báo tổng quan
+  useEffect(() => {
+    const BASE_URL = "https://all-oqry.onrender.com"
+    ;(async () => {
+      try {
+        const res = await axiosClient.get(`${BASE_URL}/api/tongquan/thongbao`)
+        const raw: any = res.data
+        const list: any[] = Array.isArray(raw?.danhSachThongBao)
+          ? raw.danhSachThongBao
+          : Array.isArray(raw)
+          ? raw
+          : []
+        const mapped = list.map((it: any, idx: number) => ({
+          id: it.id ?? it._id ?? it.key ?? idx,
+          message: String(it.message ?? it.noiDung ?? it.title ?? "") || "",
+          type: String(it.type ?? it.loai ?? "") || undefined,
+          time: String(it.time ?? it.thoiGian ?? it.createdAt ?? "") || undefined,
+        }))
+        const tongSoThongBao = Number.isFinite(Number(raw?.tongSoThongBao)) ? Number(raw.tongSoThongBao) : mapped.length
+        const thongBaoHopDong = Number.isFinite(Number(raw?.thongBaoHopDong))
+          ? Number(raw.thongBaoHopDong)
+          : mapped.filter((x: any) => (x.type || x.message).toLowerCase().includes("hợp đồng") || (x.type || x.message).toLowerCase().includes("hop dong")).length
+        setNotifications({
+          message: String(raw?.message ?? ""),
+          tongSoThongBao,
+          thongBaoHopDong,
+          danhSachThongBao: mapped,
+        })
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error("Failed to load notifications", error)
+        setNotifications({ message: "", tongSoThongBao: 0, thongBaoHopDong: 0, danhSachThongBao: [] })
       }
     })()
   }, [])
@@ -80,18 +124,13 @@ export default function Dashboard() {
     },
   ]
 
-  // const recentActivities = [
-  //   { id: 1, type: "payment", message: "Nguyễn Văn A đã thanh toán hóa đơn phòng P101", time: "2 giờ trước" },
-  //   { id: 2, type: "request", message: "Yêu cầu sửa máy lạnh từ phòng P205", time: "4 giờ trước" },
-  //   { id: 3, type: "contract", message: "Hợp đồng phòng P103 sắp hết hạn", time: "1 ngày trước" },
-  //   { id: 4, type: "new_tenant", message: "Khách thuê mới đăng ký phòng P108", time: "2 ngày trước" },
-  // ]
+  // Xoá dữ liệu mẫu – chỉ hiển thị thông báo lấy từ API
 
   const quickActions = [
-    { title: "Thêm phòng", icon: Building2, href: "/rooms", color: "bg-blue-500" },
-    { title: "Thêm khách", icon: Users, href: "/tenants", color: "bg-green-500" },
-    { title: "Tạo hợp đồng", icon: FileText, href: "/contracts", color: "bg-orange-500" },
-    { title: "Tạo hóa đơn", icon: DollarSign, href: "/finance", color: "bg-purple-500" },
+    { title: "Thêm phòng", icon: Building2, href: "/rooms?openAddRoom=1", color: "bg-blue-500" },
+    // { title: "Thêm khách", icon: Users, href: "/tenants", color: "bg-green-500" },
+    // { title: "Tạo hợp đồng", icon: FileText, href: "/contracts", color: "bg-orange-500" },
+    { title: "Tạo hóa đơn", icon: DollarSign, href: "/finance?openAddInvoice=1", color: "bg-purple-500" },
   ]
 
   if (userRole === "admin") {
@@ -117,7 +156,11 @@ export default function Dashboard() {
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" className="relative">
                   <Bell className="h-5 w-5" />
-                  <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
+                  {notifications && notifications.tongSoThongBao > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-red-500 text-white text-[10px] leading-4 rounded-full text-center">
+                      {Math.min(99, notifications.tongSoThongBao)}
+                    </span>
+                  )}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => setIsMobileMenuOpen(true)}>
                   <Menu className="h-5 w-5" />
@@ -162,12 +205,12 @@ export default function Dashboard() {
               ))}
             </div>
 
-            {/* Quick Actions - Mobile Only */}
-            {/* <div className="lg:hidden">
+            {/* Thao tác nhanh*/}
+            <div className="lg:hidden">
               <h2 className="text-lg font-semibold text-gray-900 mb-3">Thao tác nhanh</h2>
               <div className="grid grid-cols-2 gap-3">
                 {quickActions.map((action, index) => (
-                  <Card key={index} className="border-0 shadow-sm">
+                  <Card key={index} className="border-0 shadow-sm cursor-pointer" onClick={() => router.push(action.href)}>
                     <CardContent className="p-4">
                       <div className="flex flex-col items-center text-center space-y-2">
                         <div className={`p-3 rounded-full ${action.color}`}>
@@ -179,28 +222,34 @@ export default function Dashboard() {
                   </Card>
                 ))}
               </div>
-            </div> */}
+            </div>
 
             {/* Recent Activities & Quick Actions */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Recent Activities - commented out sample data */}
-              {/* <Card className="border-0 shadow-sm">
+              {/*Thông báo*/}
+              <Card className="border-0 shadow-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base lg:text-lg">Hoạt động gần đây</CardTitle>
-                  <CardDescription className="text-sm">Các sự kiện mới nhất trong hệ thống</CardDescription>
+                  <CardDescription className="text-sm">
+                    {notifications ? `Thông báo: ${notifications.tongSoThongBao} (HĐ: ${notifications.thongBaoHopDong})` : "Các sự kiện mới nhất trong hệ thống"}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {recentActivities.map((activity) => (
-                    <div key={activity.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-900">{activity.message}</p>
-                        <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
+                  {(notifications?.danhSachThongBao?.length || 0) > 0 ? (
+                    notifications!.danhSachThongBao.slice(0, 6).map((n) => (
+                      <div key={n.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-900">{n.message}</p>
+                          {n.time && <p className="text-xs text-gray-500 mt-1">{n.time}</p>}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-500">Chưa có thông báo</p>
+                  )}
                 </CardContent>
-              </Card> */}
+              </Card>
 
               {/* Quick Actions - Desktop */}
               <Card className="border-0 shadow-sm hidden lg:block">
@@ -214,7 +263,8 @@ export default function Dashboard() {
                       <Button
                         key={index}
                         variant="outline"
-                        className="h-20 flex flex-col items-center justify-center text-sm bg-transparent hover:bg-gray-50"
+                         className="h-20 flex flex-col items-center justify-center text-sm bg-transparent hover:bg-gray-50"
+                         onClick={() => router.push(action.href)}
                       >
                         <action.icon className="h-6 w-6 mb-2" />
                         {action.title}

@@ -1,6 +1,5 @@
-import { Suspense } from "react";
 "use client"
-
+import { Suspense } from "react";
 import { useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Cookies from "js-cookie"
@@ -147,7 +146,7 @@ function EditAccountPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="HoatDong">Hoạt động</SelectItem>
-                    <SelectItem value="Khoa">Khóa</SelectItem>
+                    {/* <SelectItem value="Khoa">Khóa</SelectItem> */}
                   </SelectContent>
                 </Select>
               </div>

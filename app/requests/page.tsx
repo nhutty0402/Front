@@ -298,9 +298,15 @@ export default function RequestsPage() {
     )
 
     try {
-      await axiosClient.patch(`${BASE_URL}/api/lienhe/${id}/trangthai`, {
-        TrangThai: statusToApi(status),
-      })
+      if (status === "in_progress") {
+        await axiosClient.put(`${BASE_URL}/api/lienhe/${id}/batdau`, {})
+      } else if (status === "completed") {
+        await axiosClient.put(`${BASE_URL}/api/lienhe/${id}/hoanthanh`, {})
+      } else {
+        await axiosClient.patch(`${BASE_URL}/api/lienhe/${id}/trangthai`, {
+          TrangThai: statusToApi(status),
+        })
+      }
     } catch (err) {
       // rollback
       // eslint-disable-next-line no-console

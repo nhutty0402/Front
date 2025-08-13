@@ -31,10 +31,10 @@ const navigation = [
   { name: "Yêu cầu", href: "/requests", icon: MessageSquare },
 ]
 
-const secondaryNavigation = [
-  { name: "Hồ sơ", href: "/profile", icon: User },
-  { name: "Cài đặt", href: "/settings", icon: Settings },
-]
+// const secondaryNavigation = [
+//   { name: "Hồ sơ", href: "/profile", icon: User },
+//   { name: "Cài đặt", href: "/settings", icon: Settings },
+// ]
 
 export function Sidebar() {
   const pathname = usePathname()
@@ -70,7 +70,7 @@ export function Sidebar() {
       </nav>
 
       {/* Secondary Navigation */}
-      <div className="border-t border-gray-200 px-4 py-4 space-y-1">
+      {/* <div className="border-t border-gray-200 px-4 py-4 space-y-1">
         {secondaryNavigation.map((item) => {
           const isActive = pathname === item.href
           return (
@@ -87,7 +87,7 @@ export function Sidebar() {
             </Link>
           )
         })}
-      </div>
+      </div> */}
     </div>
   )
 }
