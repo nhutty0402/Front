@@ -20,7 +20,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Sidebar } from "@/components/sidebar"
 import { MobileSidebar } from "@/components/mobile-sidebar"
-import { Plus, Edit, Trash2, FileText, Calendar, Menu, Eye, Download, User, Building } from "lucide-react"
+import { Plus, Edit, Trash2, FileText, Calendar, Menu, Eye, Download, User, Building, Filter } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { parse, isValid } from "date-fns"
 
@@ -138,6 +138,7 @@ const statusLabels = {
 export default function ContractsPage() {
   const router = useRouter()
   const [contracts, setContracts] = useState<Contract[]>(mockContracts)
+  const [showFilters, setShowFilters] = useState<boolean>(true)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null)
@@ -844,63 +845,80 @@ export default function ContractsPage() {
           </div>
 
           {/* Search and Filter */}
-          <div className="mb-4 lg:mb-6 flex flex-col lg:flex-row gap-4">
-            <div className="flex-1">
-              <Input
-                placeholder="Tìm kiếm theo số hợp đồng, tên khách thuê hoặc phòng..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
-              />
+          <div className="mb-4 lg:mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex-1">
+                <Input
+                  placeholder="Tìm kiếm theo số hợp đồng, tên khách thuê hoặc phòng..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="ml-2 h-9 w-9 p-0"
+                onClick={() => setShowFilters((v) => !v)}
+                title={showFilters ? "Thu gọn bộ lọc" : "Hiện bộ lọc"}
+                aria-label="Toggle filters"
+              >
+                <Filter className="h-4 w-4" />
+              </Button>
             </div>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-full lg:w-48">
-                <SelectValue placeholder="Lọc theo trạng thái" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả</SelectItem>
-                <SelectItem value="active">Đang hiệu lực</SelectItem>
-                <SelectItem value="pending">Chờ ký</SelectItem>
-                <SelectItem value="expired">Hết hạn</SelectItem>
-                <SelectItem value="terminated">Đã chấm dứt</SelectItem>
-              </SelectContent>
-            </Select>
 
-            <Select value={filterBuilding} onValueChange={setFilterBuilding}>
-              <SelectTrigger className="w-full lg:w-40">
-                <SelectValue placeholder="Lọc theo dãy" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả dãy</SelectItem>
-                {buildingOptions.map((b) => (
-                  <SelectItem key={b} value={b}>{b}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {showFilters && (
+              <div className="flex flex-col lg:flex-row gap-4">
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="w-full lg:w-48">
+                    <SelectValue placeholder="Lọc theo trạng thái" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả</SelectItem>
+                    <SelectItem value="active">Đang hiệu lực</SelectItem>
+                    <SelectItem value="pending">Chờ ký</SelectItem>
+                    <SelectItem value="expired">Hết hạn</SelectItem>
+                    <SelectItem value="terminated">Đã chấm dứt</SelectItem>
+                  </SelectContent>
+                </Select>
 
-            <Select value={filterRoom} onValueChange={setFilterRoom}>
-              <SelectTrigger className="w-full lg:w-40">
-                <SelectValue placeholder="Lọc theo phòng" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả phòng</SelectItem>
-                {roomOptions.map((r) => (
-                  <SelectItem key={r} value={r}>{r}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                <Select value={filterBuilding} onValueChange={setFilterBuilding}>
+                  <SelectTrigger className="w-full lg:w-40">
+                    <SelectValue placeholder="Lọc theo dãy" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả dãy</SelectItem>
+                    {buildingOptions.map((b) => (
+                      <SelectItem key={b} value={b}>{b}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-            <Button
-              variant="outline"
-              onClick={() => {
-                setFilterStatus("all")
-                setFilterBuilding("all")
-                setFilterRoom("all")
-                setSearchTerm("")
-              }}
-            >
-              Xóa bộ lọc
-            </Button>
+                <Select value={filterRoom} onValueChange={setFilterRoom}>
+                  <SelectTrigger className="w-full lg:w-40">
+                    <SelectValue placeholder="Lọc theo phòng" />
+                  </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tất cả phòng</SelectItem>
+                      {roomOptions.map((r) => (
+                        <SelectItem key={r} value={r}>{r}</SelectItem>
+                      ))}
+                    </SelectContent>
+                </Select>
+
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setFilterStatus("all")
+                    setFilterBuilding("all")
+                    setFilterRoom("all")
+                    setSearchTerm("")
+                  }}
+                >
+                  Xóa bộ lọc
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Contracts List */}

@@ -78,6 +78,7 @@ function FinancePage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const searchParams = useSearchParams()
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
+  const [meterErrors, setMeterErrors] = useState<{ dien: string; nuoc: string }>({ dien: "", nuoc: "" })
 
   // Mở dialog thêm hóa đơn khi có query từ trang chủ
   useEffect(() => {
@@ -92,7 +93,7 @@ function FinancePage() {
 
   // State for creating invoice
   const [rooms, setRooms] = useState<RoomOption[]>([])
-  const [form, setForm] = useState({
+  const getInitialForm = () => ({
     PhongID_id: "",
     ThangNam: new Date().toISOString().slice(0, 7),
     ChiSoDienCu: "",
@@ -108,6 +109,7 @@ function FinancePage() {
     TrangThaiThanhToan: "N",
     DayPhong: "",
   })
+  const [form, setForm] = useState(getInitialForm())
   const [tariffs, setTariffs] = useState<{ dien: number | null; nuoc: number | null }>({ dien: null, nuoc: null })
   const [tariffForm, setTariffForm] = useState({
     id: "",
@@ -132,6 +134,26 @@ function FinancePage() {
 
   const handleChange = (name: keyof typeof form, value: string) => {
     setForm((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const setChiSoDien = (field: "ChiSoDienCu" | "ChiSoDienMoi", value: string) => {
+    setForm((prev) => {
+      const next = { ...prev, [field]: value }
+      const dienCu = Number(next.ChiSoDienCu || 0)
+      const dienMoi = Number(next.ChiSoDienMoi || 0)
+      setMeterErrors((e) => ({ ...e, dien: dienMoi < dienCu ? "Điện mới không được nhỏ hơn điện cũ" : "" }))
+      return next
+    })
+  }
+
+  const setChiSoNuoc = (field: "ChiSoNuocCu" | "ChiSoNuocMoi", value: string) => {
+    setForm((prev) => {
+      const next = { ...prev, [field]: value }
+      const nuocCu = Number(next.ChiSoNuocCu || 0)
+      const nuocMoi = Number(next.ChiSoNuocMoi || 0)
+      setMeterErrors((e) => ({ ...e, nuoc: nuocMoi < nuocCu ? "Nước mới không được nhỏ hơn nước cũ" : "" }))
+      return next
+    })
   }
 
   const formatMonthForApi = (value: string) => {
@@ -269,6 +291,18 @@ function FinancePage() {
   useEffect(() => {
     refreshInvoices()
   }, [refreshInvoices])
+
+  // Reset form when mở dialog thêm và gán giá điện/nước mặc định từ tariffs nếu có
+  useEffect(() => {
+    if (isAddDialogOpen) {
+      setForm(() => {
+        const next = getInitialForm()
+        if (tariffs.dien != null && !next.GiaDienMoi) next.GiaDienMoi = String(tariffs.dien)
+        if (tariffs.nuoc != null && !next.GiaNuocMoi) next.GiaNuocMoi = String(tariffs.nuoc)
+        return next
+      })
+    }
+  }, [isAddDialogOpen, tariffs])
 
   // Fetch rooms for the add-invoice form
   useEffect(() => {
@@ -414,20 +448,38 @@ function FinancePage() {
       const dienMoi = Number(form.ChiSoDienMoi || 0)
       const nuocCu = Number(form.ChiSoNuocCu || 0)
       const nuocMoi = Number(form.ChiSoNuocMoi || 0)
+      // Non-negative checks
+      const nonNegativePairs: Array<[string, number]> = [
+        ["Điện cũ", dienCu],
+        ["Điện mới", dienMoi],
+        ["Nước cũ", nuocCu],
+        ["Nước mới", nuocMoi],
+        ["Tiền phòng", Number(form.TienPhong || 0)],
+        ["Giá điện", Number(form.GiaDienMoi || 0)],
+        ["Giá nước", Number(form.GiaNuocMoi || 0)],
+        ["Phí sửa chữa", Number(form.PhiSuaChua || 0)],
+        ["Phí trừ", Number(form.PhiTru || 0)],
+        ["Tiền trả", Number(form.TienTra || 0)],
+      ]
+      const negativeField = nonNegativePairs.find(([_, v]) => v < 0)
+      if (negativeField) {
+        alert(`${negativeField[0]} không được âm`)
+        return
+      }
       if (dienMoi < dienCu) {
-        alert("Chỉ số điện mới không được nhỏ hơn chỉ số điện cũ")
+        setMeterErrors((e) => ({ ...e, dien: "Điện mới không được nhỏ hơn điện cũ" }))
         return
       }
       if (nuocMoi < nuocCu) {
-        alert("Chỉ số nước mới không được nhỏ hơn chỉ số nước cũ")
+        setMeterErrors((e) => ({ ...e, nuoc: "Nước mới không được nhỏ hơn nước cũ" }))
         return
       }
 
       const selected = rooms.find((r) => String(r.id) === String(form.PhongID_id))
       const soDienDaTieuThu = Math.max(0, dienMoi - dienCu)
       const soNuocDaTieuThu = Math.max(0, nuocMoi - nuocCu)
-      const giaDien = Number(form.GiaDienMoi || 0)
-      const giaNuoc = Number(form.GiaNuocMoi || 0)
+      const giaDien = Number(form.GiaDienMoi || tariffs.dien || 0)
+      const giaNuoc = Number(form.GiaNuocMoi || tariffs.nuoc || 0)
       const tienPhong = Number(form.TienPhong || 0)
       const phiSuaChua = Number(form.PhiSuaChua || 0)
       const phiTru = Number(form.PhiTru || 0)
@@ -441,8 +493,8 @@ function FinancePage() {
         ChiSoNuocCu: nuocCu,
         ChiSoNuocMoi: nuocMoi,
         TienPhong: Number(form.TienPhong),
-        GiaDienMoi: Number(form.GiaDienMoi),
-        GiaNuocMoi: Number(form.GiaNuocMoi),
+        GiaDienMoi: giaDien,
+        GiaNuocMoi: giaNuoc,
         PhiSuaChua: Number(form.PhiSuaChua || 0),
         PhiTru: Number(form.PhiTru || 0),
         TienTra: Number(form.TienTra || 0),
@@ -454,7 +506,9 @@ function FinancePage() {
       }
 
       await axiosClient.post("https://all-oqry.onrender.com/api/hoadon", payload)
-    setIsAddDialogOpen(false)
+      // Sau khi thêm hóa đơn, tự reset form và vẫn mở dialog để nhập mới
+      setForm(getInitialForm())
+      setIsAddDialogOpen(true)
       await refreshInvoices()
     } catch (error: any) {
       console.error("Lỗi tạo hoá đơn:", error)
@@ -515,7 +569,10 @@ function FinancePage() {
             <div className="flex gap-2">
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button size="sm" className="flex-1">
+                  <Button
+                    size="sm"
+                    className="flex-1 bg-green-100 text-green-700 border border-green-200 hover:bg-green-200/70 shadow-md shadow-green-200/60 backdrop-blur-[2px] focus-visible:ring-2 focus-visible:ring-green-300"
+                  >
                     <Plus className="h-4 w-4 mr-1" />
                     Thêm
                   </Button>
@@ -549,7 +606,7 @@ function FinancePage() {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label>Điện cũ</Label>
-                        <Input type="number" value={form.ChiSoDienCu} onChange={(e) => handleChange("ChiSoDienCu", e.target.value)} required />
+                        <Input type="number" min={0} value={form.ChiSoDienCu} onChange={(e) => handleChange("ChiSoDienCu", e.target.value)} required />
                       </div>
                       <div className="space-y-2">
                         <Label>Điện mới</Label>
@@ -557,7 +614,7 @@ function FinancePage() {
                       </div>
                       <div className="space-y-2">
                         <Label>Nước cũ</Label>
-                        <Input type="number" value={form.ChiSoNuocCu} onChange={(e) => handleChange("ChiSoNuocCu", e.target.value)} required />
+                        <Input type="number" min={0} value={form.ChiSoNuocCu} onChange={(e) => handleChange("ChiSoNuocCu", e.target.value)} required />
                       </div>
                       <div className="space-y-2">
                         <Label>Nước mới</Label>
@@ -568,29 +625,29 @@ function FinancePage() {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label>Tiền phòng</Label>
-                        <Input type="number" value={form.TienPhong} onChange={(e) => handleChange("TienPhong", e.target.value)} required />
+                        <Input type="number" min={0} value={form.TienPhong} onChange={(e) => handleChange("TienPhong", e.target.value)} required />
                       </div>
                       <div className="space-y-2">
                         <Label>Giá điện</Label>
-                        <Input type="number" value={form.GiaDienMoi} onChange={(e) => handleChange("GiaDienMoi", e.target.value)} required />
+                        <Input type="number" min={0} value={form.GiaDienMoi} onChange={(e) => handleChange("GiaDienMoi", e.target.value)} required />
                         {tariffs.dien != null && (
                           <span className="text-xs text-gray-500">Giá mới nhất: {tariffs.dien.toLocaleString("vi-VN")} đ/kWh</span>
                         )}
                       </div>
                       <div className="space-y-2">
                         <Label>Giá nước</Label>
-                        <Input type="number" value={form.GiaNuocMoi} onChange={(e) => handleChange("GiaNuocMoi", e.target.value)} required />
+                        <Input type="number" min={0} value={form.GiaNuocMoi} onChange={(e) => handleChange("GiaNuocMoi", e.target.value)} required />
                         {tariffs.nuoc != null && (
                           <span className="text-xs text-gray-500">Giá mới nhất: {tariffs.nuoc.toLocaleString("vi-VN")} đ/m³</span>
                         )}
                       </div>
                       <div className="space-y-2">
                         <Label>Phí sửa chữa</Label>
-                        <Input type="number" value={form.PhiSuaChua} onChange={(e) => handleChange("PhiSuaChua", e.target.value)} />
+                        <Input type="number" min={0} value={form.PhiSuaChua} onChange={(e) => handleChange("PhiSuaChua", e.target.value)} />
                       </div>
                       <div className="space-y-2">
                         <Label>Phí trừ</Label>
-                        <Input type="number" value={form.PhiTru} onChange={(e) => handleChange("PhiTru", e.target.value)} />
+                        <Input type="number" min={0} value={form.PhiTru} onChange={(e) => handleChange("PhiTru", e.target.value)} />
                       </div>
                       
                     </div>
@@ -607,10 +664,10 @@ function FinancePage() {
                         </SelectContent>
                       </Select>
                     </div>
-
+{/* 
                     <DialogFooter>
                       <Button type="submit" className="w-full">Gửi hoá đơn</Button>
-                    </DialogFooter>
+                    </DialogFooter> */}
                   </form>
                 </DialogContent>
               </Dialog>
@@ -1036,48 +1093,77 @@ function FinancePage() {
                 <Label>Ngày thu</Label>
                 <Input type="date" value={new Date().toISOString().slice(0, 10)} disabled readOnly required />
               </div>
+              <div className="space-y-2">
+                <Label>Tháng hoá đơn</Label>
+                <Input
+                  type="month"
+                  value={toMonthInput(form.ThangNam)}
+                  onChange={(e) => handleChange("ThangNam", e.target.value)}
+                  required
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label>Điện cũ</Label>
-                  <Input type="number" value={form.ChiSoDienCu} onChange={(e) => handleChange("ChiSoDienCu", e.target.value)} required />
+                  <Input type="number" min={0} value={form.ChiSoDienCu} onChange={(e) => setChiSoDien("ChiSoDienCu", e.target.value)} required />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label>Điện mới</Label>
-                  <Input type="number" value={form.ChiSoDienMoi} onChange={(e) => handleChange("ChiSoDienMoi", e.target.value)} required />
+                  <Input type="number" min={Number(form.ChiSoDienCu || 0)} value={form.ChiSoDienMoi} onChange={(e) => setChiSoDien("ChiSoDienMoi", e.target.value)} required />
+                  {meterErrors.dien && <p className="text-xs text-red-600">{meterErrors.dien}</p>}
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label>Nước cũ</Label>
-                  <Input type="number" value={form.ChiSoNuocCu} onChange={(e) => handleChange("ChiSoNuocCu", e.target.value)} required />
+                  <Input type="number" min={0} value={form.ChiSoNuocCu} onChange={(e) => setChiSoNuoc("ChiSoNuocCu", e.target.value)} required />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label>Nước mới</Label>
-                  <Input type="number" value={form.ChiSoNuocMoi} onChange={(e) => handleChange("ChiSoNuocMoi", e.target.value)} required />
+                  <Input type="number" min={Number(form.ChiSoNuocCu || 0)} value={form.ChiSoNuocMoi} onChange={(e) => setChiSoNuoc("ChiSoNuocMoi", e.target.value)} required />
+                  {meterErrors.nuoc && <p className="text-xs text-red-600">{meterErrors.nuoc}</p>}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Tiền phòng</Label>
-                  <Input type="number" value={form.TienPhong} onChange={(e) => handleChange("TienPhong", e.target.value)} required />
+                  <Input type="number" min={0} value={form.TienPhong} onChange={(e) => handleChange("TienPhong", e.target.value)} required />
                 </div>
                 <div className="space-y-2">
                   <Label>Giá điện</Label>
-                  <Input type="number" value={form.GiaDienMoi} onChange={(e) => handleChange("GiaDienMoi", e.target.value)} required />
+                  <div className="px-3 py-2 rounded border bg-gray-50 w-full tabular-nums">
+                    {Number(form.GiaDienMoi || tariffs.dien || 0).toLocaleString("vi-VN")}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Giá nước</Label>
-                  <Input type="number" value={form.GiaNuocMoi} onChange={(e) => handleChange("GiaNuocMoi", e.target.value)} required />
-              </div>
-              <div className="space-y-2">
+                  <div className="px-3 py-2 rounded border bg-gray-50 w-full tabular-nums">
+                    {Number(form.GiaNuocMoi || tariffs.nuoc || 0).toLocaleString("vi-VN")}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Dãy phòng</Label>
+                  <Input readOnly value={form.DayPhong} />
+                </div>
+                <div className="space-y-2">
                   <Label>Phí sửa chữa</Label>
-                  <Input type="number" value={form.PhiSuaChua} onChange={(e) => handleChange("PhiSuaChua", e.target.value)} />
+                  <Input type="number" min={0} value={form.PhiSuaChua} onChange={(e) => handleChange("PhiSuaChua", e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label>Phí trừ</Label>
-                  <Input type="number" value={form.PhiTru} onChange={(e) => handleChange("PhiTru", e.target.value)} />
+                  <Input type="number" min={0} value={form.PhiTru} onChange={(e) => handleChange("PhiTru", e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label>Tiền trả</Label>
-                  <Input type="number" value={form.TienTra} onChange={(e) => handleChange("TienTra", e.target.value)} />
+                  <Input type="number" min={0} value={form.TienTra} onChange={(e) => handleChange("TienTra", e.target.value)} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Số điện tiêu thụ</Label>
+                    <Input readOnly value={(() => { const dC = Number(form.ChiSoDienCu||0); const dM = Number(form.ChiSoDienMoi||0); return Math.max(0, dM-dC) })()} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Số nước tiêu thụ</Label>
+                    <Input readOnly value={(() => { const nC = Number(form.ChiSoNuocCu||0); const nM = Number(form.ChiSoNuocMoi||0); return Math.max(0, nM-nC) })()} />
+                  </div>
                 </div>
                 <div className="space-y-2 col-span-2">
                   <Label>Tổng tiền </Label>
@@ -1149,11 +1235,14 @@ function FinancePage() {
                 </Select>
               </div>
             </div>
-            <DialogFooter>
-              <Button type="submit" className="w-full">
-                Gửi hoá đơn
-              </Button>
-            </DialogFooter>
+              <DialogFooter>
+                <Button
+                  type="submit"
+                  className="w-full bg-green-100 text-green-700 border border-green-200 hover:bg-green-200/70 shadow-md hover:shadow-lg shadow-green-200/60 backdrop-blur-[1px] focus-visible:ring-2 focus-visible:ring-green-300 transition"
+                >
+                  Gửi hoá đơn
+                </Button>
+              </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>

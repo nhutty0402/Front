@@ -320,6 +320,13 @@ const RoomsPage: FunctionComponent = () => {
   const [extensionMonths, setExtensionMonths] = useState<number>(12)
   const [extensionPaymentCycle, setExtensionPaymentCycle] = useState<string>("1 tháng")
 
+  // Helper: lấy token hợp lệ từ cookie
+  const getValidToken = (): string | null => {
+    const token = Cookies.get("token")
+    if (!token || token === "null" || token === "undefined" || token.trim() === "") return null
+    return token
+  }
+
   // const [landlordInfo, setLandlordInfo] = useState({
   //   name: "Công ty TNHH Quản lý Nhà trọ ABC",
   //   address: "123 Đường ABC, Phường XYZ, Quận 1, TP.HCM",
@@ -440,10 +447,10 @@ const RoomsPage: FunctionComponent = () => {
     }
   }
   useEffect(() => {
-    const token = Cookies.get("token");
+    const token = getValidToken();
     console.log("Token từ cookie:", token);
 
-    if (!token || token === "null" || token === "undefined") {
+    if (!token) {
       console.warn("Không có token → chuyển về /login");
       router.replace("/login");
       return;
@@ -642,10 +649,10 @@ const RoomsPage: FunctionComponent = () => {
   //   }, []);
 
   useEffect(() => {
-    const token = Cookies.get("token"); // ✅ lấy từ cookie
+    const token = getValidToken(); // ✅ lấy từ cookie
     console.log("Token từ cookie:", token);
 
-    if (!token || token === "null" || token === "undefined") {
+    if (!token) {
       console.warn("Không có token → chuyển về /login");
       router.replace("/login");
       return;
@@ -738,10 +745,10 @@ const RoomsPage: FunctionComponent = () => {
     };
 
     // ✅ Lấy token từ cookie
-    const token = Cookies.get("token");
+    const token = getValidToken();
     console.log("Token từ cookie:", token);
 
-    if (!token || token === "null" || token === "undefined") {
+    if (!token) {
       console.warn("Không có token → chuyển về /login");
       router.replace("/login");
       return;
@@ -837,16 +844,7 @@ const RoomsPage: FunctionComponent = () => {
   }
 
 
-  // thêm phòng
-  // Token
-  const token = Cookies.get("token"); // ✅ lấy từ cookie
-  console.log("Token từ cookie:", token);
-
-  if (!token || token === "null" || token === "undefined") {
-    console.warn("Không có token → chuyển về /login");
-    router.replace("/login");
-    return;
-  }
+  // thêm phòng - không kiểm tra token trực tiếp trong render để tránh hydration error
 
   const handleAddRoom = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -1039,10 +1037,10 @@ const RoomsPage: FunctionComponent = () => {
     const form = e.currentTarget;
     const formData = new FormData(form);
 
-    const token = Cookies.get("token"); // ✅ Lấy từ cookie
+    const token = getValidToken(); // ✅ Lấy từ cookie
     console.log("Token từ cookie:", token);
 
-    if (!token || token === "null" || token === "undefined") {
+    if (!token) {
       console.warn("Không có token → chuyển về /login");
       router.replace("/login");
       return; // ❗️ Dừng thực thi nếu không có token
@@ -2139,6 +2137,7 @@ const RoomsPage: FunctionComponent = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Desktop Sidebar */}
+      {/* Chưa biết */}
       <div className="hidden lg:block fixed inset-y-0 left-0 z-50">
         <Sidebar />
       </div>
@@ -4064,7 +4063,7 @@ const RoomsPage: FunctionComponent = () => {
                             <option value="" disabled>-- Chọn giới tính --</option>
                             <option value="Nam">Nam</option>
                             <option value="Nữ">Nữ</option>
-                            <option value="Khác">Khác</option>
+                            {/* <option value="Khác">Khác</option> */}
                           </select>
                         </div>
 

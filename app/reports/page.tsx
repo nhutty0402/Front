@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   BarChart,
   Bar,
@@ -62,6 +63,15 @@ interface ChartItemResponse {
   chiPhi: string
 }
 
+interface YearDetailResponse {
+  tienPhong: string
+  tienDien: string
+  tienNuoc: string
+  internet: string
+  dichVuKhac: string
+  tienTru?: string
+}
+
 // Định dạng tiền tệ VNĐ
 const formatCurrency = (value: number) => {
   if (value >= 1000000) {
@@ -72,15 +82,23 @@ const formatCurrency = (value: number) => {
 
 // Tooltip tùy chỉnh cho biểu đồ
 const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
+  const dataKeyLabels: Record<string, string> = {
+    revenue: "Doanh thu",
+    expenses: "Chi phí",
+  }
   if (active && payload && payload.length) {
     return (
       <div className="bg-white p-3 border rounded-lg shadow-lg">
         <p className="font-medium">{`${label}`}</p>
-        {payload.map((entry, index) => (
-          <p key={index} style={{ color: entry.color }}>
-            {`${entry.dataKey}: ${formatCurrency(entry.value)}`}
-          </p>
-        ))}
+        {payload.map((entry, index) => {
+          const key = String(entry.dataKey)
+          const name = dataKeyLabels[key] || key
+          return (
+            <p key={index} style={{ color: entry.color }}>
+              {`${name}: ${formatCurrency(entry.value)}`}
+            </p>
+          )
+        })}
       </div>
     )
   }
@@ -102,10 +120,21 @@ export default function ReportsPage() {
   // State: API data
   const [summary, setSummary] = useState<SummaryResponse | null>(null)
   const [monthlyRevenue, setMonthlyRevenue] = useState<Array<{ month: string; revenue: number; expenses: number }>>([])
+  const [yearDetail, setYearDetail] = useState<{
+    tienPhong: number
+    tienDien: number
+    tienNuoc: number
+    internet: number
+    dichVuKhac: number
+    tienTru: number
+  } | null>(null)
+  const currentYear = new Date().getFullYear()
+  const [selectedYear, setSelectedYear] = useState<number>(currentYear)
+  const availableYears = Array.from({ length: 6 }).map((_, idx) => currentYear - idx)
 
-  // Fetch data from API (năm 2025)
+  // Fetch data from API theo năm đã chọn
   useEffect(() => {
-    const year = 2025
+    const year = selectedYear
     const baseUrl = "https://all-oqry.onrender.com"
     ;(async () => {
       try {
@@ -124,27 +153,28 @@ export default function ReportsPage() {
         }))
         setMonthlyRevenue(mapped)
 
-        const d = detailRes.data as {
-          tienPhong: string
-          tienDien: string
-          tienNuoc: string
-          internet: string
-          dichVuKhac: string
-          tienTru?: string
-        }
+        const d = detailRes.data as YearDetailResponse
+        const tp = parseFloat(d?.tienPhong || "0")
+        const td = parseFloat(d?.tienDien || "0")
+        const tn = parseFloat(d?.tienNuoc || "0")
+        const inet = parseFloat(d?.internet || "0")
+        const dvk = parseFloat(d?.dichVuKhac || "0")
+        const truRaw = parseFloat(d?.tienTru || "0")
+        setYearDetail({ tienPhong: tp, tienDien: td, tienNuoc: tn, internet: inet, dichVuKhac: dvk, tienTru: truRaw })
         setServiceRevenue([
-          { name: "Tiền phòng", value: parseFloat(d?.tienPhong || "0"), color: "#3b82f6" },
-          { name: "Tiền điện", value: parseFloat(d?.tienDien || "0"), color: "#ef4444" },
-          { name: "Tiền nước", value: parseFloat(d?.tienNuoc || "0"), color: "#06b6d4" },
-          { name: "Internet", value: parseFloat(d?.internet || "0"), color: "#8b5cf6" },
-          { name: "Dịch vụ khác", value: parseFloat(d?.dichVuKhac || "0"), color: "#f59e0b" },
+          { name: "Tiền phòng", value: tp, color: "#3b82f6" },
+          { name: "Tiền điện", value: td, color: "#ef4444" },
+          { name: "Tiền nước", value: tn, color: "#06b6d4" },
+          { name: "Internet", value: inet, color: "#8b5cf6" },
+          { name: "Dịch vụ khác", value: dvk, color: "#f59e0b" },
+          ...(Math.abs(truRaw) > 0 ? [{ name: "Khấu trừ", value: Math.abs(truRaw), color: "#64748b" }] : []),
         ])
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error("Failed to load reports data", error)
       }
     })()
-  }, [])
+  }, [selectedYear])
 
   // Bỏ dữ liệu tỷ lệ lấp đầy
 
@@ -280,7 +310,21 @@ export default function ReportsPage() {
                 <TabsTrigger value="services">Dịch vụ</TabsTrigger>
               </TabsList>
 
-              {/* Bỏ bộ lọc theo tháng/quý/năm - chỉ lọc theo năm 2025 */}
+              {/* Bộ lọc năm */}
+              <div className="ml-auto flex items-center gap-2 max-w-[200px] w-full lg:w-auto">
+                <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableYears.map((y) => (
+                      <SelectItem key={y} value={String(y)}>
+                        Năm {y}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <TabsContent value="revenue" className="space-y-4">
@@ -351,6 +395,11 @@ export default function ReportsPage() {
                     {/* Danh sách dịch vụ */}
                     <div className="space-y-3">
                       <h4 className="font-medium text-gray-900 mb-3">Chi tiết doanh thu dịch vụ</h4>
+                      {yearDetail && (
+                        <div className="text-sm text-gray-600">
+                          <div>Năm: <span className="font-medium">{selectedYear}</span></div>
+                        </div>
+                      )}
                       {serviceRevenue.map((service, index) => (
                         <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                           <div className="flex items-center gap-3">
